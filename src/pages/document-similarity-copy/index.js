@@ -39,8 +39,7 @@ const App = () => {
       <div>
         <div className="hero is-info is-bold">
           <div className="hero-body">
-            <div className="container">
-            </div>
+            <div className="container"></div>
           </div>
         </div>
 
@@ -149,13 +148,13 @@ const DrawDendrogram = ({ word }) => {
     return color;
   };
 
-  const height = 1080
+  const height = 1080;
 
   const yScale = d3
     .scaleLog()
     .domain([
-      d3.min(data, (item) => item.distance+1),
-      d3.max(data, (item) => item.distance+1)
+      d3.min(data, (item) => item.distance + 1),
+      d3.max(data, (item) => item.distance + 1),
     ])
     .range([height - 200, 0])
     .base(10)
@@ -208,18 +207,18 @@ const DrawDendrogram = ({ word }) => {
       </div>
       <div style={{ overflowX: "scroll" }}>
         <svg width={contentWidth + margin.right} height={height}>
-
           <g transform={`translate(0,0)`}>
             {testData.slice(1).map((item) => {
               return (
                 <path
                   className="link"
-                  d={`M${item.x},${yScale(item.data.data.distance+1)}
-                        L${item.x},${yScale(item.parent.data.data.distance+1)}
-                        L${item.parent.x},${yScale(item.parent.data.data.distance+1)}`
-                  }
-                  stroke = "black"
-                  fill = "none"
+                  d={`M${item.x},${yScale(item.data.data.distance + 1)}
+                        L${item.x},${yScale(item.parent.data.data.distance + 1)}
+                        L${item.parent.x},${yScale(
+                    item.parent.data.data.distance + 1
+                  )}`}
+                  stroke="black"
+                  fill="none"
                 />
               );
             })}
@@ -228,9 +227,9 @@ const DrawDendrogram = ({ word }) => {
               return (
                 <g
                   key={i}
-                  transform={
-                    `translate(${item.x},${yScale(item.data.data.distance+1)})`
-                  }
+                  transform={`translate(${item.x},${yScale(
+                    item.data.data.distance + 1
+                  )})`}
                   style={{ cursor: "pointer" }}
                   onClick={() => {
                     if (item.children !== undefined) {
@@ -297,4 +296,4 @@ const DrawDendrogram = ({ word }) => {
 };
 render(<App />, document.querySelector("#content"));
 
-export default root
+export default root;
