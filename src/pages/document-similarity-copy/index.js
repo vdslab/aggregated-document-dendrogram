@@ -165,7 +165,7 @@ const DrawDendrogram = ({ word }) => {
     .id((d) => d.no)
     .parentId((d) => d.parent);
 
-  const filteredData = data.filter((item) => item.distance > 1000);
+  const filteredData = data.filter((item) => item.distance > 0);
   const dataStratify = stratify(filteredData);
   console.log(dataStratify);
   const root = d3.hierarchy(dataStratify);
@@ -175,6 +175,7 @@ const DrawDendrogram = ({ word }) => {
       (fontSize + separation) * (filteredData.length / 2),
       contentHeight - 200,
     ])
+    // .size([360, contentHeight / 2])
     .separation(() => separation);
   cluster(root);
 
