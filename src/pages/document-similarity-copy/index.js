@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { render } from "react-dom";
 import * as d3 from "d3";
-import "bulma/css/bulma.css";
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -61,6 +60,7 @@ const DrawDendrogram = ({ word }) => {
   const [displayedNodeName, setDisplayedNodeName] = useState("");
   const [selectNodeLeaves, setSelectNodeLeaves] = useState([]);
   const [nodeLeavesData, setNodeLeavesData] = useState([]);
+  const [distanceThreshold, setDistanceThreshold] = useState(0);
   const dataPath = `./data/test.json`;
 
   useEffect(() => {
@@ -122,8 +122,9 @@ const DrawDendrogram = ({ word }) => {
 
   const fontSize = 10;
   const separation = 5;
-  const contentWidth = (fontSize + separation) * (data.length / 2);
-  const contentHeight = 400;
+  const contentR = 540;
+  const contentWidth = contentR * 2;
+  const contentHeight = contentR * 2;
   const ministriesCol = d3.scaleOrdinal(d3.schemeCategory10);
 
   const margin = {
@@ -150,37 +151,29 @@ const DrawDendrogram = ({ word }) => {
 
   const height = 1080;
 
-  const yScale = d3
-    .scaleLog()
-    .domain([
-      d3.min(data, (item) => item.distance + 1),
-      d3.max(data, (item) => item.distance + 1),
-    ])
-    .range([height - 200, 0])
-    .base(10)
-    .nice();
-
   const stratify = d3
     .stratify()
     .id((d) => d.no)
     .parentId((d) => d.parent);
 
-  const filteredData = data.filter((item) => item.distance > 0);
+  const filteredData = data.filter((item) => item.distance > distanceThreshold);
   const dataStratify = stratify(filteredData);
-  console.log(dataStratify);
   const root = d3.hierarchy(dataStratify);
   const cluster = d3
     .cluster()
-    .size([
-      (fontSize + separation) * (filteredData.length / 2),
-      contentHeight - 200,
-    ])
-    // .size([360, contentHeight / 2])
+    .size([Math.PI * 2, contentR])
     .separation(() => separation);
   cluster(root);
+  const nodes = root.descendants();
+  const links = root.links();
+  console.log(dataStratify);
 
-  const testData = root.descendants();
-
+  const radiusScale = d3
+    .scaleLog()
+    .domain(d3.extent(nodes, (d) => d.data.data.distance + 1))
+    .range([contentR, 0])
+    .base(10)
+    .nice();
   const shape = d3.scaleOrdinal(
     ministriesList.map((d) => d["府省庁"]),
     d3.symbols.map((s) => d3.symbol().type(s).size(90)())
@@ -188,6 +181,24 @@ const DrawDendrogram = ({ word }) => {
 
   return (
     <div>
+      <div>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setDistanceThreshold(
+              +event.target.elements.distanceThreshold.value
+            );
+          }}
+        >
+          <input
+            name="distanceThreshold"
+            className="input"
+            type="number"
+            min="0"
+            defaultValue={distanceThreshold}
+          />
+        </form>
+      </div>
       <div style={{ overflowX: "auto" }}>
         <svg width="1195" height="180">
           {ministriesList.map((item, i) => {
@@ -210,93 +221,87 @@ const DrawDendrogram = ({ word }) => {
           })}
         </svg>
       </div>
-      <div style={{ overflowX: "scroll" }}>
-        <svg width={contentWidth + margin.right} height={height}>
-          <g transform={`translate(0,0)`}>
-            {testData.slice(1).map((item) => {
-              return (
-                <path
-                  className="link"
-                  d={`M${item.x},${yScale(item.data.data.distance + 1)}
-                        L${item.x},${yScale(item.parent.data.data.distance + 1)}
-                        L${item.parent.x},${yScale(
-                    item.parent.data.data.distance + 1
-                  )}`}
-                  stroke="black"
-                  fill="none"
-                />
-              );
-            })}
 
-            {testData.map((item, i) => {
-              return (
-                <g
-                  key={i}
-                  transform={`translate(${item.x},${yScale(
-                    item.data.data.distance + 1
-                  )})`}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    if (item.children !== undefined) {
-                      setSelectNodeLeaves(item.leaves());
-                      setDisplayedNodeName(item.data.data.no);
-                    } else {
-                      setProjectName(item.data.data["事業名"]);
-                    }
-                  }}
-                  onMouseEnter={() => {
-                    if (item.children !== undefined) {
-                      setSelectedNodeName(item.data.data.no);
-                    }
-                    setSelectedName(item.data.data["事業名"]);
-                  }}
-                  onMouseLeave={() => {
-                    if (item.children !== undefined) {
-                      setSelectedNodeName("");
-                    }
-                    setSelectedName("");
-                  }}
-                >
-                  {item.children ? (
-                    <circle
-                      r={item.children ? "3" : "6"}
-                      fill={
-                        selectedNodeName === item.data.data.no
-                          ? "blue"
-                          : displayedNodeName === item.data.data.no
-                          ? "brown"
-                          : "black"
-                      }
-                    ></circle>
-                  ) : (
+      <div style={{ overflowX: "scroll" }}>
+        <svg
+          width={contentWidth + margin.left + margin.right}
+          height={contentHeight + margin.top + margin.bottom}
+        >
+          <g
+            transform={`translate(${contentWidth / 2 + margin.left}, ${
+              contentHeight / 2 + margin.top
+            })`}
+          >
+            <g>
+              {links.map(({ source, target }) => {
+                const x1 =
+                  Math.cos(source.x) *
+                  radiusScale(source.data.data.distance + 1);
+                const y1 =
+                  Math.sin(source.x) *
+                  radiusScale(source.data.data.distance + 1);
+                const x2 =
+                  Math.cos(target.x) *
+                  radiusScale(target.data.data.distance + 1);
+                const y2 =
+                  Math.sin(target.x) *
+                  radiusScale(target.data.data.distance + 1);
+                const x3 =
+                  Math.cos(target.x) *
+                  radiusScale(source.data.data.distance + 1);
+                const y3 =
+                  Math.sin(target.x) *
+                  radiusScale(source.data.data.distance + 1);
+                const path = d3.path();
+                path.moveTo(x2, y2);
+                path.lineTo(x3, y3);
+                path.arc(
+                  0,
+                  0,
+                  radiusScale(source.data.data.distance + 1),
+                  target.x,
+                  source.x,
+                  Math.floor((source.x - target.x + 2 * Math.PI) / Math.PI) %
+                    2 ===
+                    1
+                );
+                return (
+                  <g key={`${source.data.data.no}:${target.data.data.no}`}>
                     <path
-                      d={shape(item.data.data["府省庁"])}
-                      fill={fillColor(item.data.data["府省庁"])}
-                    />
-                  )}
-                  <text
-                    transform="translate(-3,10) rotate(90)"
-                    y={item.children ? -10 : 2}
-                    x="0"
-                    fontSize={`${fontSize}px`}
-                    textAnchor={item.children ? "end" : "start"}
-                    fill={
-                      item.data.data["事業名"] === selectedName
-                        ? "blue"
-                        : item.data.data["事業名"] === projectName
-                        ? "brown"
-                        : "black"
-                    }
-                  >
-                    {item.children ? null : item.data.data["事業名"]}
-                  </text>
-                </g>
-              );
-            })}
+                      d={path.toString()}
+                      stroke="black"
+                      fill="none"
+                      style={{ transition: "d 1s" }}
+                    ></path>
+                  </g>
+                );
+              })}
+            </g>
+            <g>
+              {nodes.map((item, i) => {
+                const x =
+                  Math.cos(item.x) * radiusScale(item.data.data.distance + 1);
+                const y =
+                  Math.sin(item.x) * radiusScale(item.data.data.distance + 1);
+                return (
+                  <g key={item.data.data.no}>
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={5}
+                      fill="red"
+                      style={{ transition: "cx 1s, cy 1s" }}
+                    ></circle>
+                  </g>
+                );
+              })}
+            </g>
           </g>
         </svg>
       </div>
     </div>
+
+    //https://wizardace.com/d3-cluster-radial/のコピペ
   );
 };
 render(<App />, document.querySelector("#content"));
