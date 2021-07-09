@@ -52,6 +52,7 @@ const App = () => {
 
 const DrawDendrogram = ({ word }) => {
   const [data, setData] = useState([]);
+  const [phrase, setPhrase] = useState([]);
   const [projectData, setProjectData] = useState([]);
   const [projectName, setProjectName] = useState("");
   const [ministries, setMinistries] = useState([]);
@@ -61,6 +62,7 @@ const DrawDendrogram = ({ word }) => {
   const [selectNodeLeaves, setSelectNodeLeaves] = useState([]);
   const [nodeLeavesData, setNodeLeavesData] = useState([]);
   const [distanceThreshold, setDistanceThreshold] = useState(0);
+  const [selectedNode, setSelectedNode] = useState([]);
   const dataPath = `./data/test.json`;
 
   useEffect(() => {
@@ -89,32 +91,6 @@ const DrawDendrogram = ({ word }) => {
         setProjectData(newData);
       });
   }, [projectName]);
-
-  useEffect(() => {
-    window
-      .fetch("./data/tsne_+_clusters_list.json")
-      .then((response) => response.json())
-      .then((data) => {
-        const newNodeLeavesData = [];
-        for (const node of selectNodeLeaves) {
-          for (const project of data) {
-            if (
-              project["事業名"] === node.data.data["事業名"] &&
-              project["公開年度"] === "2018" &&
-              project["府省庁"] === node.data.data["府省庁"]
-            ) {
-              newNodeLeavesData.push({
-                事業名: project["事業名"],
-                執行額: +project["執行額"],
-                補正予算: project["補正予算"],
-                府省庁: project["府省庁"],
-              });
-            }
-          }
-        }
-        setNodeLeavesData(newNodeLeavesData);
-      });
-  }, [selectNodeLeaves]);
 
   if (data.length === 0) {
     return <div></div>;
@@ -156,7 +132,9 @@ const DrawDendrogram = ({ word }) => {
     .id((d) => d.no)
     .parentId((d) => d.parent);
 
-  const filteredData = data.filter((item) => item.distance > distanceThreshold);
+  const filteredData = data.filter(
+    (item) => item.distance >= distanceThreshold
+  );
   const dataStratify = stratify(filteredData);
   const root = d3.hierarchy(dataStratify);
   const cluster = d3
@@ -166,7 +144,7 @@ const DrawDendrogram = ({ word }) => {
   cluster(root);
   const nodes = root.descendants();
   const links = root.links();
-  console.log(dataStratify);
+  console.log(selectedNode);
 
   const radiusScale = d3
     .scaleLog()
@@ -284,7 +262,32 @@ const DrawDendrogram = ({ word }) => {
                 const y =
                   Math.sin(item.x) * radiusScale(item.data.data.distance + 1);
                 return (
-                  <g key={item.data.data.no}>
+                  <g
+                    key={item.data.data.no}
+                    style={{ cursor: "pointer" }}
+                    onClick={(event) => {
+                      const keys = ["pke", "tfidf", "okapi"];
+                      const words = {};
+                      for (const node of item.leaves()) {
+                        for (const key of keys) {
+                          for (word of node.data.data[key]) {
+                            if (!(word.word in words)) {
+                              words[word.word] = 0;
+                            }
+                            words[word.word] += word.score;
+                          }
+                        }
+                      }
+
+                      const wordsArray = Object.entries(words).map(
+                        ([word, score]) => ({
+                          word,
+                          score,
+                        })
+                      );
+                      console.log(wordsArray);
+                    }}
+                  >
                     <circle
                       cx={x}
                       cy={y}
@@ -300,8 +303,6 @@ const DrawDendrogram = ({ word }) => {
         </svg>
       </div>
     </div>
-
-    //https://wizardace.com/d3-cluster-radial/のコピペ
   );
 };
 render(<App />, document.querySelector("#content"));
