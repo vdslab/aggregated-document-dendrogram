@@ -200,8 +200,8 @@ const DrawDendrogram = ({ word }) => {
         </svg>
       </div>
 
-      <div class="viwes" style={{ overflowX: "scroll" }}>
-        <div id="graph">
+      <div class="views" style={{ display: "flex" }}>
+        <div>
           <svg
             width={contentWidth + margin.left + margin.right}
             height={contentHeight + margin.top + margin.bottom}
@@ -308,19 +308,14 @@ const DrawDendrogram = ({ word }) => {
             </g>
           </svg>
         </div>
-        <div id="words" margin-left="1405">
+        <div>
           <svg
             width={wordsBoxWidth}
-            height={20 * wordsArray.length + margin.top + margin.bottom}
+            height={wordsArray.length * 20 + margin.top + margin.bottom}
           >
             {wordsArray.sort().map((item, i) => {
               return (
-                <g
-                  transform={`translate(${margin.left / 2}, ${
-                    margin.top + i * 20
-                  })`}
-                >
-                  {console.log(item)}
+                <g transform={`translate(${0}, ${margin.top + i * 20})`}>
                   <text x="7" y="5">
                     {item.word}
                   </text>
