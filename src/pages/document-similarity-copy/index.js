@@ -49,6 +49,38 @@ const App = () => {
   }
 };
 
+const aggregateWords = (node) => {
+  const keys = ["pke", "tfidf", "okapi"];
+  const words = {};
+  for (const node of node.leaves()) {
+    for (const key of keys) {
+      for (const word of node.data.data[key]) {
+        if (!(word.word in words)) {
+          words[word.word] = 0;
+        }
+        words[word.word] += word.score;
+      }
+    }
+  }
+  return Object.entries(words).map(([word, score]) => ({
+    word,
+    score,
+  }));
+};
+
+const PhraseCircle = (node) => {
+  const data = { name: "A", children: aggregateWords(node) };
+  const root = d3.hierarchy(data);
+  root.sum((d) => {
+    return d.score;
+  });
+  const pack = d3.pack().size([100, 100]).padding(0);
+  pack(root);
+
+  const x = Math.cos(node.x) * radiusScale(node.data.data.distance + 1);
+  const y = Math.sin(node.x) * radiusScale(node.data.data.distance + 1);
+};
+
 const DrawDendrogram = ({ word }) => {
   const [data, setData] = useState([]);
   const [phrase, setPhrase] = useState([]);
@@ -60,7 +92,7 @@ const DrawDendrogram = ({ word }) => {
   const [displayedNodeName, setDisplayedNodeName] = useState("");
   const [selectNodeLeaves, setSelectNodeLeaves] = useState([]);
   const [nodeLeavesData, setNodeLeavesData] = useState([]);
-  const [distanceThreshold, setDistanceThreshold] = useState(0);
+  const [distanceThreshold, setDistanceThreshold] = useState(1000);
   const [wordsArray, setWordsArray] = useState([]);
   const dataPath = `./data/test.json`;
 
@@ -132,11 +164,7 @@ const DrawDendrogram = ({ word }) => {
     .stratify()
     .id((d) => d.no)
     .parentId((d) => d.parent);
-
-  const filteredData = data.filter(
-    (item) => item.distance >= distanceThreshold
-  );
-  const dataStratify = stratify(filteredData);
+  const dataStratify = stratify(data);
   const root = d3.hierarchy(dataStratify);
   const cluster = d3
     .cluster()
@@ -148,7 +176,14 @@ const DrawDendrogram = ({ word }) => {
 
   const radiusScale = d3
     .scaleLog()
-    .domain(d3.extent(nodes, (d) => d.data.data.distance + 1))
+    .domain(
+      d3.extent(
+        nodes.filter((node) => {
+          return node.data.data.distance >= distanceThreshold;
+        }),
+        (d) => d.data.data.distance + 1
+      )
+    )
     .range([contentR, 0])
     .base(10)
     .nice();
@@ -182,6 +217,7 @@ const DrawDendrogram = ({ word }) => {
           {ministriesList.map((item, i) => {
             return (
               <g
+                key={item["府省庁"]}
                 transform={`translate(${
                   i < 7
                     ? 50 + 160 * i
@@ -200,7 +236,7 @@ const DrawDendrogram = ({ word }) => {
         </svg>
       </div>
 
-      <div class="views" style={{ display: "flex" }}>
+      <div className="views" style={{ display: "flex" }}>
         <div>
           <svg
             width={contentWidth + margin.left + margin.right}
@@ -212,98 +248,79 @@ const DrawDendrogram = ({ word }) => {
               })`}
             >
               <g>
-                {links.map(({ source, target }) => {
-                  const x1 =
-                    Math.cos(source.x) *
-                    radiusScale(source.data.data.distance + 1);
-                  const y1 =
-                    Math.sin(source.x) *
-                    radiusScale(source.data.data.distance + 1);
-                  const x2 =
-                    Math.cos(target.x) *
-                    radiusScale(target.data.data.distance + 1);
-                  const y2 =
-                    Math.sin(target.x) *
-                    radiusScale(target.data.data.distance + 1);
-                  const x3 =
-                    Math.cos(target.x) *
-                    radiusScale(source.data.data.distance + 1);
-                  const y3 =
-                    Math.sin(target.x) *
-                    radiusScale(source.data.data.distance + 1);
-                  const path = d3.path();
-                  path.moveTo(x2, y2);
-                  path.lineTo(x3, y3);
-                  path.arc(
-                    0,
-                    0,
-                    radiusScale(source.data.data.distance + 1),
-                    target.x,
-                    source.x,
-                    Math.floor((source.x - target.x + 2 * Math.PI) / Math.PI) %
-                      2 ===
-                      1
-                  );
-                  return (
-                    <g key={`${source.data.data.no}:${target.data.data.no}`}>
-                      <path
-                        d={path.toString()}
-                        stroke="black"
-                        fill="none"
-                        style={{ transition: "d 1s" }}
-                      ></path>
-                    </g>
-                  );
-                })}
+                {links
+                  .filter(({ source, target }) => {
+                    return (
+                      source.data.data.distance >= distanceThreshold &&
+                      target.data.data.distance >= distanceThreshold
+                    );
+                  })
+                  .map(({ source, target }) => {
+                    const x1 =
+                      Math.cos(source.x) *
+                      radiusScale(source.data.data.distance + 1);
+                    const y1 =
+                      Math.sin(source.x) *
+                      radiusScale(source.data.data.distance + 1);
+                    const x2 =
+                      Math.cos(target.x) *
+                      radiusScale(target.data.data.distance + 1);
+                    const y2 =
+                      Math.sin(target.x) *
+                      radiusScale(target.data.data.distance + 1);
+                    const x3 =
+                      Math.cos(target.x) *
+                      radiusScale(source.data.data.distance + 1);
+                    const y3 =
+                      Math.sin(target.x) *
+                      radiusScale(source.data.data.distance + 1);
+                    const path = d3.path();
+                    path.moveTo(x2, y2);
+                    path.lineTo(x3, y3);
+                    path.arc(
+                      0,
+                      0,
+                      radiusScale(source.data.data.distance + 1),
+                      target.x,
+                      source.x,
+                      Math.floor(
+                        (source.x - target.x + 2 * Math.PI) / Math.PI
+                      ) %
+                        2 ===
+                        1
+                    );
+                    return (
+                      <g key={`${source.data.data.no}:${target.data.data.no}`}>
+                        <path
+                          d={path.toString()}
+                          stroke="black"
+                          fill="none"
+                          style={{ transition: "d 1s" }}
+                        ></path>
+                      </g>
+                    );
+                  })}
               </g>
               <g>
-                {nodes.map((item, i) => {
-                  const x =
-                    Math.cos(item.x) * radiusScale(item.data.data.distance + 1);
-                  const y =
-                    Math.sin(item.x) * radiusScale(item.data.data.distance + 1);
-                  return (
-                    <g
-                      key={item.data.data.no}
-                      style={{ cursor: "pointer" }}
-                      onClick={(event) => {
-                        const keys = ["pke", "tfidf", "okapi"];
-                        const words = {};
-                        for (const node of item.leaves()) {
-                          for (const key of keys) {
-                            for (word of node.data.data[key]) {
-                              if (!(word.word in words)) {
-                                words[word.word] = 0;
-                              }
-                              words[word.word] += word.score;
-                            }
-                          }
-                        }
-                        const wordsArray = Object.entries(words).map(
-                          ([word, score]) => ({
-                            word,
-                            score,
-                          })
-                        );
-                        setWordsArray(
-                          wordsArray.sort(function (a, b) {
-                            if (a.score < b.score) return 1;
-                            if (a.score > b.score) return -1;
-                            return 0;
-                          })
-                        );
-                      }}
-                    >
-                      <circle
-                        cx={x}
-                        cy={y}
-                        r={5}
-                        fill="red"
-                        style={{ transition: "cx 1s, cy 1s" }}
-                      ></circle>
-                    </g>
-                  );
-                })}
+                {nodes
+                  .filter((node) => {
+                    return node.data.data.distance >= distanceThreshold;
+                  })
+                  .map((item, i) => {
+                    console.log(item);
+                    return (
+                      <g key={item.data.data.no} style={{ cursor: "pointer" }}>
+                        <PhraseCircle node={item}></PhraseCircle>
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={5}
+                          fill="red"
+                          style={{ transition: "cx 1s, cy 1s" }}
+                        ></circle>
+                      </g>
+                    );
+                  })}
               </g>
             </g>
           </svg>
@@ -315,7 +332,10 @@ const DrawDendrogram = ({ word }) => {
           >
             {wordsArray.sort().map((item, i) => {
               return (
-                <g transform={`translate(${0}, ${margin.top + i * 20})`}>
+                <g
+                  key={word}
+                  transform={`translate(${0}, ${margin.top + i * 20})`}
+                >
                   <text x="7" y="5">
                     {item.word}
                   </text>
@@ -329,5 +349,3 @@ const DrawDendrogram = ({ word }) => {
   );
 };
 render(<App />, document.querySelector("#content"));
-
-export default root;
