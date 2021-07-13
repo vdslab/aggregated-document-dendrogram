@@ -1,60 +1,43 @@
 import React, { useEffect, useState } from "react";
 import { render } from "react-dom";
 import * as d3 from "d3";
+import { node } from "webpack";
 const App = () => {
   const [data, setData] = useState([]);
-  const dataPath = "./data/plot_test_data_25_DB_16_3.json";
+  const dataPath = "./data/test.json";
 
   useEffect(() => {
     window
       .fetch(dataPath)
-      .then((response) => response.json())
-      .then((data) => {
-        d3.forceSimulation(data)
-          .force(
-            "collide",
-            d3
-              .forceCollide()
-              .radius(function (d) {
-                return Math.pow(d.count, 0.7) + 8.5;
-              })
-
-              .strength(0.015)
-              .iterations(30)
-          )
-          .force("charge", d3.forceManyBody().strength(1))
-          .force("center", d3.forceCenter())
-          .on("end", () => {
-            setData(data);
-          });
+      .then(response => response.json())
+      .then(data => {
+        setData(data);
       });
-  }, []);
+  }, [dataPath]);
 
-  if (data.length === 0) {
-    return <div>loading</div>;
-  } else {
-    return (
-      <div>
-        <div className="hero is-info is-bold">
-          <div className="hero-body">
-            <div className="container"></div>
-          </div>
-        </div>
-
-        <div className="App">
-          <DrawDendrogram data={data} />
+  return data.length === 0 ? (
+    <div>loading</div>
+  ) : (
+    <div>
+      <div className="hero is-info is-bold">
+        <div className="hero-body">
+          <div className="container"></div>
         </div>
       </div>
-    );
-  }
+
+      <div className="App">
+        <DrawDendrogram data={data} />
+      </div>
+    </div>
+  );
 };
 
-const aggregateWords = (node) => {
+const aggregateWords = item => {
   const keys = ["pke", "tfidf", "okapi"];
   const words = {};
-  for (const node of node.leaves()) {
+  for (const item of item.leaves()) {
     for (const key of keys) {
-      for (const word of node.data.data[key]) {
+      for (const word of item.data.data[key]) {
         if (!(word.word in words)) {
           words[word.word] = 0;
         }
@@ -64,25 +47,68 @@ const aggregateWords = (node) => {
   }
   return Object.entries(words).map(([word, score]) => ({
     word,
-    score,
+    score
   }));
 };
 
-const PhraseCircle = (node) => {
-  const data = { name: "A", children: aggregateWords(node) };
+const PhraseCircle = ({ item: item, x: x, y: y }) => {
+  const data = { name: "A", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
-  root.sum((d) => {
+  root.sum(d => {
     return d.score;
   });
-  const pack = d3.pack().size([100, 100]).padding(0);
+  const pack = d3
+    .pack()
+    .size([100, 100])
+    .padding(0);
   pack(root);
 
-  const x = Math.cos(node.x) * radiusScale(node.data.data.distance + 1);
-  const y = Math.sin(node.x) * radiusScale(node.data.data.distance + 1);
+  // const nodes = root.descendants();
+  // return <g></g>;
+  // const node = d3
+  //   .selectAll(".node")
+  //   .data(root.descendants())
+  //   .enter()
+  //   .append("g")
+  //   .attr("transform", (d) => {
+  //     return "translate(" + d.x + "," + d.y + ")";
+  //   });
+
+  // const color = ["orange", "Khaki", "Ivory"];
+  // node
+  //   .append("circle")
+  //   .attr("r", function (d) {
+  //     return d.r;
+  //   })
+  //   .attr("stroke", "black")
+  //   .attr("fill", (d) => {
+  //     return color[d.depth];
+  //   });
+
+  // node
+  //   .append("text")
+  //   .style("text-anchor", (d) => {
+  //     return d.children ? "end" : "middle";
+  //   })
+  //   .attr("font-size", "150%")
+  //   .text((d) => {
+  //     return d.children ? "" : d.data.name;
+  //   });
+  // console.log(node);
+  // return <g key={i}>{node}</g>;
+  // return node;
+  return (
+    <circle
+      cx={x}
+      cy={y}
+      r={5}
+      fill="red"
+      style={{ transition: "cx 1s, cy 1s" }}
+    ></circle>
+  );
 };
 
-const DrawDendrogram = ({ word }) => {
-  const [data, setData] = useState([]);
+const DrawDendrogram = ({ data }) => {
   const [phrase, setPhrase] = useState([]);
   const [projectData, setProjectData] = useState([]);
   const [projectName, setProjectName] = useState("");
@@ -94,29 +120,19 @@ const DrawDendrogram = ({ word }) => {
   const [nodeLeavesData, setNodeLeavesData] = useState([]);
   const [distanceThreshold, setDistanceThreshold] = useState(1000);
   const [wordsArray, setWordsArray] = useState([]);
-  const dataPath = `./data/test.json`;
-
-  useEffect(() => {
-    window
-      .fetch(dataPath)
-      .then((response) => response.json())
-      .then((data) => {
-        setData(data);
-      });
-  }, [dataPath]);
 
   useEffect(() => {
     window
       .fetch("./data/tsne_+_clusters_list.json")
-      .then((response) => response.json())
-      .then((data) => {
+      .then(response => response.json())
+      .then(data => {
         const ministriesSet = new Set();
-        data.map((item) => {
+        data.map(item => {
           return ministriesSet.add(item["府省庁"]);
         });
         setMinistries(Array.from(ministriesSet));
 
-        const newData = data.filter((item) => {
+        const newData = data.filter(item => {
           return item["公開年度"] === "2018" && item["事業名"] === projectName;
         });
         setProjectData(newData);
@@ -140,7 +156,7 @@ const DrawDendrogram = ({ word }) => {
     left: 160,
     right: 200,
     top: 75,
-    bottom: 150,
+    bottom: 150
   };
 
   const ministriesList = [];
@@ -148,9 +164,9 @@ const DrawDendrogram = ({ word }) => {
     return ministriesList.push({ 府省庁: item, color: ministriesCol(i) });
   });
 
-  const fillColor = (ministryName) => {
+  const fillColor = ministryName => {
     let color = "";
-    ministriesList.forEach((ministry) => {
+    ministriesList.forEach(ministry => {
       if (ministry["府省庁"] === ministryName) {
         color = ministry.color;
       }
@@ -158,12 +174,10 @@ const DrawDendrogram = ({ word }) => {
     return color;
   };
 
-  const height = 1080;
-
   const stratify = d3
     .stratify()
-    .id((d) => d.no)
-    .parentId((d) => d.parent);
+    .id(d => d.no)
+    .parentId(d => d.parent);
   const dataStratify = stratify(data);
   const root = d3.hierarchy(dataStratify);
   const cluster = d3
@@ -178,25 +192,31 @@ const DrawDendrogram = ({ word }) => {
     .scaleLog()
     .domain(
       d3.extent(
-        nodes.filter((node) => {
+        nodes.filter(node => {
           return node.data.data.distance >= distanceThreshold;
         }),
-        (d) => d.data.data.distance + 1
+        d => d.data.data.distance + 1
       )
     )
     .range([contentR, 0])
     .base(10)
     .nice();
+
   const shape = d3.scaleOrdinal(
-    ministriesList.map((d) => d["府省庁"]),
-    d3.symbols.map((s) => d3.symbol().type(s).size(90)())
+    ministriesList.map(d => d["府省庁"]),
+    d3.symbols.map(s =>
+      d3
+        .symbol()
+        .type(s)
+        .size(90)()
+    )
   );
 
   return (
     <div>
       <div>
         <form
-          onSubmit={(event) => {
+          onSubmit={event => {
             event.preventDefault();
             setDistanceThreshold(
               +event.target.elements.distanceThreshold.value
@@ -243,9 +263,8 @@ const DrawDendrogram = ({ word }) => {
             height={contentHeight + margin.top + margin.bottom}
           >
             <g
-              transform={`translate(${contentWidth / 2 + margin.left}, ${
-                contentHeight / 2 + margin.top
-              })`}
+              transform={`translate(${contentWidth / 2 +
+                margin.left}, ${contentHeight / 2 + margin.top})`}
             >
               <g>
                 {links
@@ -303,21 +322,19 @@ const DrawDendrogram = ({ word }) => {
               </g>
               <g>
                 {nodes
-                  .filter((node) => {
+                  .filter(node => {
                     return node.data.data.distance >= distanceThreshold;
                   })
                   .map((item, i) => {
-                    console.log(item);
+                    const x =
+                      Math.cos(item.x) *
+                      radiusScale(item.data.data.distance + 1);
+                    const y =
+                      Math.sin(item.x) *
+                      radiusScale(item.data.data.distance + 1);
                     return (
                       <g key={item.data.data.no} style={{ cursor: "pointer" }}>
-                        <PhraseCircle node={item}></PhraseCircle>
-                        <circle
-                          cx={x}
-                          cy={y}
-                          r={5}
-                          fill="red"
-                          style={{ transition: "cx 1s, cy 1s" }}
-                        ></circle>
+                        <PhraseCircle item={item} x={x} y={y} />
                       </g>
                     );
                   })}
