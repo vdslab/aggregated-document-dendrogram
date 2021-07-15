@@ -3,4 +3,4 @@ import "./index.css";
 
 import "@babel/polyfill";
 
-import("./App");
+import("./app");
