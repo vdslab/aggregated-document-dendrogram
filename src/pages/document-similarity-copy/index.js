@@ -56,30 +56,24 @@ const PhraseCircle = ({ item: item, x: x, y: y }) => {
   root.sum((d) => {
     return d.score;
   });
-  const circleSize = 100;
+  const circleSize = 10;
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
   const nodes = root.descendants();
-  return nodes.map((node) => {
-    <g key={node.data.word}>
-      <circle
-        cx={x + node.x - circleSize / 2}
-        cy={y + node.y - circleSize / 2}
-        r={node.r}
-        fill="red"
-        style={{ transition: "cx 1s, cy 1s" }}
-      ></circle>
-    </g>;
+  return nodes.map((node, i) => {
+    return (
+      <g key={i}>
+        <circle
+          cx={x + node.x - circleSize / 2}
+          cy={y + node.y - circleSize / 2}
+          r={node.r}
+          // fill="red"
+          fillOpacity="50%"
+          style={{ transition: "cx 1s, cy 1s" }}
+        ></circle>
+      </g>
+    );
   });
-  return (
-    <circle
-      cx={x}
-      cy={y}
-      r={5}
-      fill="red"
-      style={{ transition: "cx 1s, cy 1s" }}
-    ></circle>
-  );
 };
 
 const DrawDendrogram = ({ data }) => {
@@ -299,12 +293,6 @@ const DrawDendrogram = ({ data }) => {
               </g>
             </g>
           </svg>
-        </div>
-        <div>
-          <svg
-            width={wordsBoxWidth}
-            height={wordsArray.length * 20 + margin.top + margin.bottom}
-          ></svg>
         </div>
       </div>
     </div>
