@@ -144,12 +144,10 @@ const DrawDendrogram = ({ data }) => {
     return <div></div>;
   }
 
-  const fontSize = 10;
   const separation = 5;
   const contentR = 540;
   const contentWidth = contentR * 2;
   const contentHeight = contentR * 2;
-  const wordsBoxWidth = fontSize * 50;
   const ministriesCol = d3.scaleOrdinal(d3.schemeCategory10);
 
   const margin = {
