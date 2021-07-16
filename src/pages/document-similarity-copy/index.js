@@ -54,7 +54,7 @@ const aggregateWords = (item) => {
     }));
 };
 
-const PhraseCircle = ({ item: item, x: x, y: y }) => {
+const PhraseCircle = ({ item, x, y }) => {
   const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
   root.sum((d) => {
@@ -117,28 +117,7 @@ const PhraseCircle = ({ item: item, x: x, y: y }) => {
 };
 
 const DrawDendrogram = ({ data }) => {
-  const [projectData, setProjectData] = useState([]);
-  const [projectName, setProjectName] = useState("");
-  const [ministries, setMinistries] = useState([]);
   const [distanceThreshold, setDistanceThreshold] = useState(1000);
-
-  useEffect(() => {
-    window
-      .fetch("./data/tsne_+_clusters_list.json")
-      .then((response) => response.json())
-      .then((data) => {
-        const ministriesSet = new Set();
-        data.map((item) => {
-          return ministriesSet.add(item["府省庁"]);
-        });
-        setMinistries(Array.from(ministriesSet));
-
-        const newData = data.filter((item) => {
-          return item["公開年度"] === "2018" && item["事業名"] === projectName;
-        });
-        setProjectData(newData);
-      });
-  }, [projectName]);
 
   if (data.length === 0) {
     return <div></div>;
@@ -148,7 +127,6 @@ const DrawDendrogram = ({ data }) => {
   const contentR = 540;
   const contentWidth = contentR * 2;
   const contentHeight = contentR * 2;
-  const ministriesCol = d3.scaleOrdinal(d3.schemeCategory10);
 
   const margin = {
     left: 160,
@@ -156,22 +134,6 @@ const DrawDendrogram = ({ data }) => {
     top: 75,
     bottom: 150,
   };
-
-  const ministriesList = [];
-  ministries.map((item, i) => {
-    return ministriesList.push({ 府省庁: item, color: ministriesCol(i) });
-  });
-
-  const fillColor = (ministryName) => {
-    let color = "";
-    ministriesList.forEach((ministry) => {
-      if (ministry["府省庁"] === ministryName) {
-        color = ministry.color;
-      }
-    });
-    return color;
-  };
-
   const stratify = d3
     .stratify()
     .id((d) => d.no)
@@ -200,11 +162,6 @@ const DrawDendrogram = ({ data }) => {
     .base(20)
     .nice();
 
-  const shape = d3.scaleOrdinal(
-    ministriesList.map((d) => d["府省庁"]),
-    d3.symbols.map((s) => d3.symbol().type(s).size(90)())
-  );
-
   return (
     <div>
       <div>
@@ -224,29 +181,6 @@ const DrawDendrogram = ({ data }) => {
             defaultValue={distanceThreshold}
           />
         </form>
-      </div>
-      <div style={{ overflowX: "auto" }}>
-        <svg width="1195" height="180">
-          {ministriesList.map((item, i) => {
-            return (
-              <g
-                key={item["府省庁"]}
-                transform={`translate(${
-                  i < 7
-                    ? 50 + 160 * i
-                    : i < 14
-                    ? 50 + 160 * (i - 7)
-                    : 50 + 160 * (i - 14)
-                }, ${i < 7 ? 17 : i < 14 ? 34 : 51})`}
-              >
-                <path d={shape(item["府省庁"])} fill={item.color} />
-                <text x="7" y="5">
-                  {item["府省庁"]}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
       </div>
 
       <div className="views" style={{ display: "flex" }}>
@@ -313,7 +247,7 @@ const DrawDendrogram = ({ data }) => {
                   .filter((node) => {
                     return node.data.data.distance >= distanceThreshold;
                   })
-                  .map((item, i) => {
+                  .map((item) => {
                     const x =
                       Math.cos(item.x) *
                       radiusScale(item.data.data.distance + 1);
