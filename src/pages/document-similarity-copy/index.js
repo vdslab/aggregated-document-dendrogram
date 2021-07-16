@@ -44,45 +44,83 @@ const aggregateWords = (item) => {
       }
     }
   }
-  return Object.entries(words).map(([word, score]) => ({
-    word,
-    score,
-  }));
+  return Object.entries(words)
+    .filter((item) => {
+      return item[1] >= 5;
+    })
+    .map(([word, score]) => ({
+      word,
+      score,
+    }));
 };
 
 const PhraseCircle = ({ item: item, x: x, y: y }) => {
-  const data = { name: "A", children: aggregateWords(item) };
+  const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
   root.sum((d) => {
     return d.score;
   });
-  const circleSize = 10;
+
+  const circleSize = 200;
+  const strokeColor = "#888";
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
   const nodes = root.descendants();
   return nodes.map((node, i) => {
+    if (node.data.name === "root") {
+      return (
+        <g
+          key={i}
+          transform={`translate(${x + node.x - circleSize / 2} ${
+            y + node.y - circleSize / 2
+          } )`}
+        >
+          <circle
+            cx={0}
+            cy={0}
+            r={node.r}
+            fillOpacity="100%"
+            fill="white"
+            stroke={strokeColor}
+            style={{ transition: "cx 1s, cy 1s" }}
+          ></circle>
+        </g>
+      );
+    }
     return (
-      <g key={i}>
+      <g
+        key={i}
+        transform={`translate(${x + node.x - circleSize / 2} ${
+          y + node.y - circleSize / 2
+        } )`}
+      >
         <circle
-          cx={x + node.x - circleSize / 2}
-          cy={y + node.y - circleSize / 2}
+          cx={0}
+          cy={0}
           r={node.r}
-          // fill="red"
           fillOpacity="50%"
+          fill="#7d99ad"
           style={{ transition: "cx 1s, cy 1s" }}
         ></circle>
+        <text
+          x={0}
+          y={0}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={10}
+        >
+          {node.data.word}
+        </text>
       </g>
     );
   });
 };
 
 const DrawDendrogram = ({ data }) => {
-  const [phrase, setPhrase] = useState([]);
   const [projectData, setProjectData] = useState([]);
   const [projectName, setProjectName] = useState("");
   const [ministries, setMinistries] = useState([]);
   const [distanceThreshold, setDistanceThreshold] = useState(1000);
-  const [wordsArray, setWordsArray] = useState([]);
 
   useEffect(() => {
     window
@@ -161,7 +199,7 @@ const DrawDendrogram = ({ data }) => {
       )
     )
     .range([contentR, 0])
-    .base(10)
+    .base(20)
     .nice();
 
   const shape = d3.scaleOrdinal(
@@ -264,7 +302,7 @@ const DrawDendrogram = ({ data }) => {
                       <g key={`${source.data.data.no}:${target.data.data.no}`}>
                         <path
                           d={path.toString()}
-                          stroke="black"
+                          stroke="#888"
                           fill="none"
                           style={{ transition: "d 1s" }}
                         ></path>
@@ -284,11 +322,21 @@ const DrawDendrogram = ({ data }) => {
                     const y =
                       Math.sin(item.x) *
                       radiusScale(item.data.data.distance + 1);
-                    return (
-                      <g key={item.data.data.no} style={{ cursor: "pointer" }}>
-                        <PhraseCircle item={item} x={x} y={y} />
-                      </g>
-                    );
+                    if (
+                      item.children.every(
+                        (child) => child.data.data.distance < distanceThreshold
+                      )
+                    ) {
+                      return (
+                        <g
+                          key={item.data.data.no}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {console.log(item)}
+                          <PhraseCircle item={item} x={x} y={y} />
+                        </g>
+                      );
+                    }
                   })}
               </g>
             </g>
