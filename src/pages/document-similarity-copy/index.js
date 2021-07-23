@@ -25,14 +25,40 @@ const App = () => {
       </div>
 
       <div className="App">
-        <DrawDendrogram data={data} />
+        <FormatData data={data} />
       </div>
     </div>
   );
 };
 
+const optimalFontSize = (word, r, fontFamily, fontWeight) => {
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.textContent = word;
+  text.setAttributeNS(null, "font-family", fontFamily);
+  text.setAttributeNS(null, "font-weight", fontWeight);
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.appendChild(text);
+  document.body.appendChild(svg);
+  let ok = 0;
+  let ng = 100;
+  for (let iter = 0; iter < 10; ++iter) {
+    let m = (ok + ng) / 2;
+    text.setAttributeNS(null, "font-size", m);
+    const { width, height } = text.getBBox();
+    const d = Math.sqrt(width ** 2 + height ** 2) / 2;
+    if (d <= r) {
+      ok = m;
+    } else {
+      ng = m;
+    }
+  }
+  document.body.removeChild(svg);
+  return ok;
+};
+
 const aggregateWords = (item) => {
   const keys = ["pke", "tfidf", "okapi"];
+  const countThreshold = 5;
   const words = {};
   for (const data of item.leaves()) {
     for (const key of keys) {
@@ -46,7 +72,7 @@ const aggregateWords = (item) => {
   }
   return Object.entries(words)
     .filter((item) => {
-      return item[1] >= 5;
+      return item[1] >= countThreshold && item[0] !== "";
     })
     .map(([word, score]) => ({
       word,
@@ -61,7 +87,7 @@ const PhraseCircle = ({ item, x, y }) => {
     return d.score;
   });
 
-  const circleSize = 200;
+  const circleSize = root.value + 100;
   const strokeColor = "#888";
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
@@ -107,7 +133,7 @@ const PhraseCircle = ({ item, x, y }) => {
           y={0}
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={10}
+          fontSize={optimalFontSize(node.data.word, node.r)}
         >
           {node.data.word}
         </text>
@@ -116,17 +142,35 @@ const PhraseCircle = ({ item, x, y }) => {
   });
 };
 
-const DrawDendrogram = ({ data }) => {
-  const [distanceThreshold, setDistanceThreshold] = useState(1000);
-
-  if (data.length === 0) {
-    return <div></div>;
-  }
-
-  const separation = 5;
+const FormatData = ({ data }) => {
   const contentR = 540;
   const contentWidth = contentR * 2;
   const contentHeight = contentR * 2;
+
+  const stratify = d3
+    .stratify()
+    .id((d) => d.no)
+    .parentId((d) => d.parent);
+  const dataStratify = stratify(data);
+  const root = d3.hierarchy(dataStratify);
+  return (
+    <DrawDendrogram
+      originalRoot={root}
+      contentR={contentR}
+      contentHeight={contentHeight}
+      contentWidth={contentWidth}
+    />
+  );
+};
+
+const DrawDendrogram = ({
+  originalRoot,
+  contentR,
+  contentHeight,
+  contentWidth,
+}) => {
+  const [distanceThreshold, setDistanceThreshold] = useState(1000);
+  const [root, setRoot] = useState(originalRoot);
 
   const margin = {
     left: 160,
@@ -134,20 +178,15 @@ const DrawDendrogram = ({ data }) => {
     top: 75,
     bottom: 150,
   };
-  const stratify = d3
-    .stratify()
-    .id((d) => d.no)
-    .parentId((d) => d.parent);
-  const dataStratify = stratify(data);
-  const root = d3.hierarchy(dataStratify);
+  const separation = 5;
+  const scaleBase = 20;
+  const nodes = root.descendants();
+  const links = root.links();
   const cluster = d3
     .cluster()
     .size([Math.PI * 2, contentR])
     .separation(() => separation);
   cluster(root);
-  const nodes = root.descendants();
-  const links = root.links();
-
   const radiusScale = d3
     .scaleLog()
     .domain(
@@ -159,7 +198,7 @@ const DrawDendrogram = ({ data }) => {
       )
     )
     .range([contentR, 0])
-    .base(20)
+    .base(scaleBase)
     .nice();
 
   return (
@@ -247,6 +286,11 @@ const DrawDendrogram = ({ data }) => {
                   .filter((node) => {
                     return node.data.data.distance >= distanceThreshold;
                   })
+                  .filter((node) => {
+                    return node.children.every(
+                      (child) => child.data.data.distance >= distanceThreshold
+                    );
+                  })
                   .map((item) => {
                     const x =
                       Math.cos(item.x) *
@@ -254,21 +298,49 @@ const DrawDendrogram = ({ data }) => {
                     const y =
                       Math.sin(item.x) *
                       radiusScale(item.data.data.distance + 1);
-                    if (
-                      item.children.every(
-                        (child) => child.data.data.distance < distanceThreshold
-                      )
-                    ) {
-                      return (
-                        <g
-                          key={item.data.data.no}
-                          style={{ cursor: "pointer" }}
-                        >
-                          {console.log(item)}
-                          <PhraseCircle item={item} x={x} y={y} />
-                        </g>
-                      );
-                    }
+                    return (
+                      <g
+                        key={item.data.data.no}
+                        onClick={() => {
+                          setRoot(item);
+                          setDistanceThreshold(distanceThreshold / scaleBase);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <circle cx={x} cy={y} r={20}></circle>
+                      </g>
+                    );
+                  })}
+              </g>
+              <g>
+                {nodes
+                  .filter((node) => {
+                    return node.data.data.distance >= distanceThreshold;
+                  })
+                  .filter((node) => {
+                    return node.children.every(
+                      (child) => child.data.data.distance < distanceThreshold
+                    );
+                  })
+                  .map((item) => {
+                    const x =
+                      Math.cos(item.x) *
+                      radiusScale(item.data.data.distance + 1);
+                    const y =
+                      Math.sin(item.x) *
+                      radiusScale(item.data.data.distance + 1);
+                    return (
+                      <g
+                        key={item.data.data.no}
+                        onClick={() => {
+                          setRoot(item);
+                          setDistanceThreshold(distanceThreshold / scaleBase);
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <PhraseCircle item={item} x={x} y={y} />
+                      </g>
+                    );
                   })}
               </g>
             </g>
