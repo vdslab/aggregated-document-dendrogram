@@ -91,7 +91,6 @@ const aggregateWords = (item) => {
 const circleColor = (word, wordClusterData) => {
   for (const key of Object.keys(wordClusterData)) {
     if (wordClusterData[key].word === word) {
-      console.log(wordClusterData[key].cluster_id);
       return wordClusterData[key].cluster_id;
     }
   }
@@ -335,7 +334,7 @@ const DrawDendrogram = ({
                         }}
                         style={{ cursor: "pointer" }}
                       >
-                        <circle cx={x} cy={y} r={20}></circle>
+                        <circle cx={x} cy={y} r={10}></circle>
                       </g>
                     );
                   })}
@@ -362,7 +361,28 @@ const DrawDendrogram = ({
                         key={item.data.data.no}
                         onClick={() => {
                           setRoot(item);
-                          setDistanceThreshold(distanceThreshold / scaleBase);
+                          let left = 0;
+                          let right = 10000;
+                          for (let i = 0; i < 50; i++) {
+                            const mid = (left + right) / 2;
+                            const numberLeaves = item
+                              .descendants()
+                              .filter((node) => {
+                                return node.data.data.distance >= mid;
+                              })
+                              .filter((node) => {
+                                return node.children.every(
+                                  (child) => child.data.data.distance < mid
+                                );
+                              }).length;
+                            const target = 10;
+                            if (numberLeaves <= target) {
+                              right = mid;
+                            } else {
+                              left = mid;
+                            }
+                          }
+                          setDistanceThreshold(right);
                         }}
                         style={{ cursor: "pointer" }}
                       >
