@@ -3,7 +3,7 @@ import { render } from "react-dom";
 import * as d3 from "d3";
 const App = () => {
   const [data, setData] = useState([]);
-  const dataPath = "./data/test.json";
+  const dataPath = "./data/test (1).json";
 
   useEffect(() => {
     window
@@ -57,8 +57,16 @@ const optimalFontSize = (word, r, fontFamily, fontWeight) => {
 };
 
 const aggregateWords = (item) => {
-  const keys = ["pke", "tfidf", "okapi"];
-  const countThreshold = 5;
+  const keys = [
+    // "TextRank",
+    // "SingleRank",
+    // "PositionRank",
+    "TopicRank",
+    "MultipartiteRank",
+    "tfidf",
+    "okapi",
+  ];
+  const countThreshold = 10;
   const words = {};
   for (const data of item.leaves()) {
     for (const key of keys) {
@@ -80,14 +88,22 @@ const aggregateWords = (item) => {
     }));
 };
 
-const PhraseCircle = ({ item, x, y }) => {
+const circleColor = (word, wordClusterData) => {
+  for (const key of Object.keys(wordClusterData)) {
+    if (wordClusterData[key].word === word) {
+      console.log(wordClusterData[key].cluster_id);
+      return wordClusterData[key].cluster_id;
+    }
+  }
+};
+const PhraseCircle = ({ item, x, y, wordClusterData }) => {
   const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
   root.sum((d) => {
     return d.score;
   });
 
-  const circleSize = root.value + 100;
+  const circleSize = root.value / 2;
   const strokeColor = "#888";
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
@@ -125,7 +141,9 @@ const PhraseCircle = ({ item, x, y }) => {
           cy={0}
           r={node.r}
           fillOpacity="50%"
-          fill="#7d99ad"
+          fill={
+            d3.schemeCategory10[circleColor(node.data.word, wordClusterData)]
+          }
           style={{ transition: "cx 1s, cy 1s" }}
         ></circle>
         <text
@@ -171,6 +189,16 @@ const DrawDendrogram = ({
 }) => {
   const [distanceThreshold, setDistanceThreshold] = useState(1000);
   const [root, setRoot] = useState(originalRoot);
+  const [wordClusterData, setWordClusterData] = useState([]);
+  const wordClusterPath = "./data/word_cluster.json";
+  useEffect(() => {
+    window
+      .fetch(wordClusterPath)
+      .then((response) => response.json())
+      .then((wordClusterData) => {
+        setWordClusterData(wordClusterData);
+      });
+  }, [wordClusterPath]);
 
   const margin = {
     left: 160,
@@ -338,7 +366,12 @@ const DrawDendrogram = ({
                         }}
                         style={{ cursor: "pointer" }}
                       >
-                        <PhraseCircle item={item} x={x} y={y} />
+                        <PhraseCircle
+                          item={item}
+                          x={x}
+                          y={y}
+                          wordClusterData={wordClusterData}
+                        />
                       </g>
                     );
                   })}
