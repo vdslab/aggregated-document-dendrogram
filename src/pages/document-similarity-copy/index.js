@@ -62,9 +62,9 @@ const aggregateWords = (item) => {
     // "SingleRank",
     // "PositionRank",
     // "TopicRank",
-    "MultipartiteRank",
-    // "tfidf",
-    // "okapi",
+    // "MultipartiteRank",
+    "tfidf",
+    "okapi",
   ];
   const words = {};
   for (const data of item.leaves()) {
@@ -113,7 +113,7 @@ const circleColor = (word, wordClusterData) => {
 
 const distanceBinarySearch = (item) => {
   console.log(item.leaves().length);
-  if (item.leaves().length < 20) {
+  if (item.leaves().length < 100) {
     return 0;
   } else {
     let left = 0;
@@ -369,72 +369,75 @@ const DrawDendrogram = ({
                   })}
               </g>
               <g>
-                {nodes
-                  .filter((node) => {
-                    return node.data.data.distance > distanceThreshold;
-                  })
-                  .filter((node) => {
-                    return node.children.every(
-                      (child) => child.data.data.distance > distanceThreshold
-                    );
-                  })
-                  .map((item) => {
-                    const x =
-                      Math.cos(item.x) *
-                      radiusScale(item.data.data.distance + 1);
-                    const y =
-                      Math.sin(item.x) *
-                      radiusScale(item.data.data.distance + 1);
-                    return (
-                      <g
-                        key={item.data.data.no}
-                        onClick={() => {
-                          setRoot(item);
-                          setDistanceThreshold(distanceBinarySearch(item));
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <circle cx={x} cy={y} r={10}></circle>
-                      </g>
-                    );
-                  })}
+                {distanceThreshold !== 0 &&
+                  nodes
+                    .filter((node) => {
+                      return node.data.data.distance > distanceThreshold;
+                    })
+                    .filter((node) => {
+                      return node.children.every(
+                        (child) => child.data.data.distance > distanceThreshold
+                      );
+                    })
+                    .map((item) => {
+                      const x =
+                        Math.cos(item.x) *
+                        radiusScale(item.data.data.distance + 1);
+                      const y =
+                        Math.sin(item.x) *
+                        radiusScale(item.data.data.distance + 1);
+                      return (
+                        <g
+                          key={item.data.data.no}
+                          onClick={() => {
+                            setRoot(item);
+                            setDistanceThreshold(distanceBinarySearch(item));
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <circle cx={x} cy={y} r={10}></circle>
+                        </g>
+                      );
+                    })}
               </g>
               <g>
-                {nodes
-                  .filter((node) => {
-                    return node.data.data.distance > distanceThreshold;
-                  })
-                  .filter((node) => {
-                    return node.children.every(
-                      (child) => child.data.data.distance <= distanceThreshold
-                    );
-                  })
-                  .map((item) => {
-                    const x =
-                      Math.cos(item.x) *
-                      radiusScale(item.data.data.distance + 1);
-                    const y =
-                      Math.sin(item.x) *
-                      radiusScale(item.data.data.distance + 1);
-                    return (
-                      <g
-                        key={item.data.data.no}
-                        onClick={() => {
-                          setRoot(item);
-                          setDistanceThreshold(distanceBinarySearch(item));
-                        }}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <PhraseCircle
-                          item={item}
-                          x={x}
-                          y={y}
-                          wordClusterData={wordClusterData}
-                          circleSize={circleScale(item.leaves().length)}
-                        />
-                      </g>
-                    );
-                  })}
+                {distanceThreshold !== 0 &&
+                  nodes
+                    .filter((node) => {
+                      return node.data.data.distance > distanceThreshold;
+                    })
+                    .filter((node) => {
+                      return node.children.every(
+                        (child) => child.data.data.distance <= distanceThreshold
+                      );
+                    })
+                    .map((item) => {
+                      const x =
+                        Math.cos(item.x) *
+                        radiusScale(item.data.data.distance + 1);
+                      const y =
+                        Math.sin(item.x) *
+                        radiusScale(item.data.data.distance + 1);
+                      return (
+                        <g
+                          key={item.data.data.no}
+                          onClick={() => {
+                            setRoot(item);
+                            setDistanceThreshold(distanceBinarySearch(item));
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <PhraseCircle
+                            item={item}
+                            x={x}
+                            y={y}
+                            wordClusterData={wordClusterData}
+                            circleSize={circleScale(item.leaves().length)}
+                            distanceThreshold={distanceThreshold}
+                          />
+                        </g>
+                      );
+                    })}
               </g>
               <g>
                 {nodes
@@ -453,7 +456,15 @@ const DrawDendrogram = ({
                       radiusScale(item.data.data.distance + 1);
                     return (
                       <g key={item.data.data.no} style={{ cursor: "pointer" }}>
-                        <text x={x} y={y}>
+                        <text
+                          x={x}
+                          y={y}
+                          textAnchor={x >= 0 ? "start" : "end"}
+                          dominantBaseline={
+                            y >= 0 ? "text-before-edge" : "text-after-edge"
+                          }
+                          fontSize={10}
+                        >
                           {item.data.data["事業名"]}
                         </text>
                       </g>
