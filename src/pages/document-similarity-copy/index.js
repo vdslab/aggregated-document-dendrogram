@@ -113,7 +113,6 @@ const circleColor = (word, wordClusterData) => {
 
 const distanceBinarySearch = (item) => {
   const numberBusinessThreshold = 100;
-  console.log(item.leaves().length);
   if (item.leaves().length < numberBusinessThreshold) {
     return 0;
   } else {
@@ -230,8 +229,10 @@ const DrawDendrogram = ({
   contentHeight,
   contentWidth,
 }) => {
-  const [distanceThreshold, setDistanceThreshold] = useState(1000);
   const [root, setRoot] = useState(originalRoot);
+  const [distanceThreshold, setDistanceThreshold] = useState(
+    distanceBinarySearch(root)
+  );
   const [wordClusterData, setWordClusterData] = useState([]);
   const wordClusterPath = "./data/word_cluster.json";
   useEffect(() => {
@@ -250,7 +251,7 @@ const DrawDendrogram = ({
     bottom: 150,
   };
   const separation = 5;
-  const scaleBase = 20;
+  const scaleBase = 2;
   const nodes = root.descendants();
   const links = root.links();
   const cluster = d3
@@ -311,43 +312,71 @@ const DrawDendrogram = ({
                     );
                   })
                   .map(({ source, target }) => {
-                    const x2 =
-                      Math.cos(target.x) *
-                      radiusScale(target.data.data.distance + 1);
-                    const y2 =
-                      Math.sin(target.x) *
-                      radiusScale(target.data.data.distance + 1);
-                    const x3 =
-                      Math.cos(target.x) *
-                      radiusScale(source.data.data.distance + 1);
-                    const y3 =
-                      Math.sin(target.x) *
-                      radiusScale(source.data.data.distance + 1);
-                    const path = d3.path();
-                    path.moveTo(x2, y2);
-                    path.lineTo(x3, y3);
-                    path.arc(
-                      0,
-                      0,
-                      radiusScale(source.data.data.distance + 1),
-                      target.x,
-                      source.x,
-                      Math.floor(
-                        (source.x - target.x + 2 * Math.PI) / Math.PI
-                      ) %
-                        2 ===
-                        1
-                    );
-                    return (
-                      <g key={`${source.data.data.no}:${target.data.data.no}`}>
-                        <path
-                          d={path.toString()}
-                          stroke="#888"
-                          fill="none"
-                          style={{ transition: "d 1s" }}
-                        ></path>
-                      </g>
-                    );
+                    if (source.y === 0) {
+                      const x2 =
+                        Math.cos(target.x) *
+                        radiusScale(target.data.data.distance + 1);
+                      const y2 =
+                        Math.sin(target.x) *
+                        radiusScale(target.data.data.distance + 1);
+                      const x3 = 0;
+                      const y3 = 0;
+                      const path = d3.path();
+                      path.moveTo(x2, y2);
+                      path.lineTo(x3, y3);
+                      return (
+                        <g
+                          key={`${source.data.data.no}:${target.data.data.no}`}
+                        >
+                          <path
+                            d={path.toString()}
+                            stroke="#888"
+                            fill="none"
+                            style={{ transition: "d 1s" }}
+                          ></path>
+                        </g>
+                      );
+                    } else {
+                      const x2 =
+                        Math.cos(target.x) *
+                        radiusScale(target.data.data.distance + 1);
+                      const y2 =
+                        Math.sin(target.x) *
+                        radiusScale(target.data.data.distance + 1);
+                      const x3 =
+                        Math.cos(target.x) *
+                        radiusScale(source.data.data.distance + 1);
+                      const y3 =
+                        Math.sin(target.x) *
+                        radiusScale(source.data.data.distance + 1);
+                      const path = d3.path();
+                      path.moveTo(x2, y2);
+                      path.lineTo(x3, y3);
+                      path.arc(
+                        0,
+                        0,
+                        radiusScale(source.data.data.distance + 1),
+                        target.x,
+                        source.x,
+                        Math.floor(
+                          (source.x - target.x + 2 * Math.PI) / Math.PI
+                        ) %
+                          2 ===
+                          1
+                      );
+                      return (
+                        <g
+                          key={`${source.data.data.no}:${target.data.data.no}`}
+                        >
+                          <path
+                            d={path.toString()}
+                            stroke="#888"
+                            fill="none"
+                            style={{ transition: "d 1s" }}
+                          ></path>
+                        </g>
+                      );
+                    }
                   })}
               </g>
               <g>
@@ -362,12 +391,17 @@ const DrawDendrogram = ({
                       );
                     })
                     .map((item) => {
-                      const x =
-                        Math.cos(item.x) *
-                        radiusScale(item.data.data.distance + 1);
-                      const y =
-                        Math.sin(item.x) *
-                        radiusScale(item.data.data.distance + 1);
+                      let x = 0;
+                      let y = 0;
+                      if (item.y === 0) {
+                      } else {
+                        x =
+                          Math.cos(item.x) *
+                          radiusScale(item.data.data.distance + 1);
+                        y =
+                          Math.sin(item.x) *
+                          radiusScale(item.data.data.distance + 1);
+                      }
                       return (
                         <g
                           key={item.data.data.no}
