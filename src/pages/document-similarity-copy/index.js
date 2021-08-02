@@ -66,7 +66,6 @@ const aggregateWords = (item) => {
     "tfidf",
     "okapi",
   ];
-  const countThreshold = 10;
   const words = {};
   for (const data of item.leaves()) {
     for (const key of keys) {
@@ -78,9 +77,25 @@ const aggregateWords = (item) => {
       }
     }
   }
+
+  let left = 0;
+  let right = 1000;
+  for (let i = 0; i < 50; i++) {
+    const mid = (left + right) / 2;
+    const numberWords = Object.entries(words).filter((word) => {
+      return word[1] > mid;
+    }).length;
+    const target = 10;
+    if (numberWords <= target) {
+      right = mid;
+    } else {
+      left = mid;
+    }
+  }
+
   return Object.entries(words)
     .filter((item) => {
-      return item[1] >= countThreshold && item[0] !== "";
+      return item[1] >= right && item[0] !== "";
     })
     .map(([word, score]) => ({
       word,
@@ -95,6 +110,35 @@ const circleColor = (word, wordClusterData) => {
     }
   }
 };
+
+const distanceBinarySearch = (item) => {
+  console.log(item.leaves().length);
+  if (item.leaves().length < 20) {
+    return 0;
+  } else {
+    let left = 0;
+    let right = 10000;
+    for (let i = 0; i < 50; i++) {
+      const mid = (left + right) / 2;
+      const numberLeaves = item
+        .descendants()
+        .filter((node) => {
+          return node.data.data.distance >= mid;
+        })
+        .filter((node) => {
+          return node.children.every((child) => child.data.data.distance < mid);
+        }).length;
+      const target = 10;
+      if (numberLeaves <= target) {
+        right = mid;
+      } else {
+        left = mid;
+      }
+    }
+    return right;
+  }
+};
+
 const PhraseCircle = ({ item, x, y, wordClusterData }) => {
   const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
@@ -102,7 +146,8 @@ const PhraseCircle = ({ item, x, y, wordClusterData }) => {
     return d.score;
   });
 
-  const circleSize = root.value / 2;
+  const circleSize = 200;
+  // const circleSize = item.leaves().length;
   const strokeColor = "#888";
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
@@ -311,11 +356,11 @@ const DrawDendrogram = ({
               <g>
                 {nodes
                   .filter((node) => {
-                    return node.data.data.distance >= distanceThreshold;
+                    return node.data.data.distance > distanceThreshold;
                   })
                   .filter((node) => {
                     return node.children.every(
-                      (child) => child.data.data.distance >= distanceThreshold
+                      (child) => child.data.data.distance > distanceThreshold
                     );
                   })
                   .map((item) => {
@@ -330,7 +375,7 @@ const DrawDendrogram = ({
                         key={item.data.data.no}
                         onClick={() => {
                           setRoot(item);
-                          setDistanceThreshold(distanceThreshold / scaleBase);
+                          setDistanceThreshold(distanceBinarySearch(item));
                         }}
                         style={{ cursor: "pointer" }}
                       >
@@ -342,11 +387,11 @@ const DrawDendrogram = ({
               <g>
                 {nodes
                   .filter((node) => {
-                    return node.data.data.distance >= distanceThreshold;
+                    return node.data.data.distance > distanceThreshold;
                   })
                   .filter((node) => {
                     return node.children.every(
-                      (child) => child.data.data.distance < distanceThreshold
+                      (child) => child.data.data.distance <= distanceThreshold
                     );
                   })
                   .map((item) => {
@@ -361,28 +406,7 @@ const DrawDendrogram = ({
                         key={item.data.data.no}
                         onClick={() => {
                           setRoot(item);
-                          let left = 0;
-                          let right = 10000;
-                          for (let i = 0; i < 50; i++) {
-                            const mid = (left + right) / 2;
-                            const numberLeaves = item
-                              .descendants()
-                              .filter((node) => {
-                                return node.data.data.distance >= mid;
-                              })
-                              .filter((node) => {
-                                return node.children.every(
-                                  (child) => child.data.data.distance < mid
-                                );
-                              }).length;
-                            const target = 10;
-                            if (numberLeaves <= target) {
-                              right = mid;
-                            } else {
-                              left = mid;
-                            }
-                          }
-                          setDistanceThreshold(right);
+                          setDistanceThreshold(distanceBinarySearch(item));
                         }}
                         style={{ cursor: "pointer" }}
                       >
@@ -392,6 +416,30 @@ const DrawDendrogram = ({
                           y={y}
                           wordClusterData={wordClusterData}
                         />
+                      </g>
+                    );
+                  })}
+              </g>
+              <g>
+                {nodes
+                  .filter((node) => {
+                    return (
+                      node.data.data.distance >= distanceThreshold &&
+                      node.data.data.distance === 0
+                    );
+                  })
+                  .map((item) => {
+                    const x =
+                      Math.cos(item.x) *
+                      radiusScale(item.data.data.distance + 1);
+                    const y =
+                      Math.sin(item.x) *
+                      radiusScale(item.data.data.distance + 1);
+                    return (
+                      <g key={item.data.data.no} style={{ cursor: "pointer" }}>
+                        <text x={x} y={y}>
+                          {item.data.data["事業名"]}
+                        </text>
                       </g>
                     );
                   })}
