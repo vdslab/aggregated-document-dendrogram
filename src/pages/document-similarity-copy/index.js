@@ -63,7 +63,7 @@ const aggregateWords = (item) => {
     // "PositionRank",
     // "TopicRank",
     // "MultipartiteRank",
-    "tfidf",
+    // "tfidf",
     "okapi",
   ];
   const words = {};
@@ -112,8 +112,9 @@ const circleColor = (word, wordClusterData) => {
 };
 
 const distanceBinarySearch = (item) => {
+  const numberBusinessThreshold = 100;
   console.log(item.leaves().length);
-  if (item.leaves().length < 100) {
+  if (item.leaves().length < numberBusinessThreshold) {
     return 0;
   } else {
     let left = 0;
@@ -290,25 +291,6 @@ const DrawDendrogram = ({
 
   return (
     <div>
-      {/* <div>
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            setDistanceThreshold(
-              +event.target.elements.distanceThreshold.value
-            );
-          }}
-        >
-          <input
-            name="distanceThreshold"
-            className="input"
-            type="number"
-            min="0"
-            defaultValue={distanceThreshold}
-          />
-        </form>
-      </div> */}
-
       <div className="views" style={{ display: "flex" }}>
         <div>
           <svg
