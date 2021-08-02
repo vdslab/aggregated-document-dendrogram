@@ -61,10 +61,10 @@ const aggregateWords = (item) => {
     // "TextRank",
     // "SingleRank",
     // "PositionRank",
-    "TopicRank",
+    // "TopicRank",
     "MultipartiteRank",
-    "tfidf",
-    "okapi",
+    // "tfidf",
+    // "okapi",
   ];
   const words = {};
   for (const data of item.leaves()) {
@@ -139,15 +139,13 @@ const distanceBinarySearch = (item) => {
   }
 };
 
-const PhraseCircle = ({ item, x, y, wordClusterData }) => {
+const PhraseCircle = ({ item, x, y, wordClusterData, circleSize }) => {
   const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
   root.sum((d) => {
     return d.score;
   });
 
-  const circleSize = 200;
-  // const circleSize = item.leaves().length;
   const strokeColor = "#888";
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
@@ -272,10 +270,27 @@ const DrawDendrogram = ({
     .range([contentR, 0])
     .base(scaleBase)
     .nice();
+  let hashList = nodes
+    .filter((node) => {
+      return node.data.data.distance > distanceThreshold;
+    })
+    .filter((node) => {
+      return node.children.every(
+        (child) => child.data.data.distance <= distanceThreshold
+      );
+    });
+  let tempList = hashList.map((item) => {
+    return item.leaves().length;
+  });
+  const max =
+    hashList[tempList.indexOf(Math.max.apply(null, tempList))].leaves().length;
+  const min =
+    hashList[tempList.indexOf(Math.min.apply(null, tempList))].leaves().length;
+  const circleScale = d3.scaleLinear().domain([min, max]).range([100, 200]);
 
   return (
     <div>
-      <div>
+      {/* <div>
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -292,7 +307,7 @@ const DrawDendrogram = ({
             defaultValue={distanceThreshold}
           />
         </form>
-      </div>
+      </div> */}
 
       <div className="views" style={{ display: "flex" }}>
         <div>
@@ -415,6 +430,7 @@ const DrawDendrogram = ({
                           x={x}
                           y={y}
                           wordClusterData={wordClusterData}
+                          circleSize={circleScale(item.leaves().length)}
                         />
                       </g>
                     );
