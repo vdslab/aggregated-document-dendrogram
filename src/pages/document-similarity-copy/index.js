@@ -62,9 +62,9 @@ const aggregateWords = (item) => {
     // "SingleRank",
     // "PositionRank",
     // "TopicRank",
-    // "MultipartiteRank",
+    "MultipartiteRank",
     // "tfidf",
-    "okapi",
+    // "okapi",
   ];
   const words = {};
   for (const data of item.leaves()) {
