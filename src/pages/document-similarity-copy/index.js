@@ -3,7 +3,7 @@ import { render } from "react-dom";
 import * as d3 from "d3";
 const App = () => {
   const [data, setData] = useState([]);
-  const dataPath = "./data/test (1).json";
+  const dataPath = "./data/test1123.json";
 
   useEffect(() => {
     window
@@ -234,7 +234,7 @@ const DrawDendrogram = ({
     distanceBinarySearch(root)
   );
   const [wordClusterData, setWordClusterData] = useState([]);
-  const wordClusterPath = "./data/word_cluster.json";
+  const wordClusterPath = "./data/word_cluster1123.json";
   useEffect(() => {
     window
       .fetch(wordClusterPath)
@@ -481,7 +481,7 @@ const DrawDendrogram = ({
                           }
                           fontSize={10}
                         >
-                          {item.data.data["事業名"]}
+                          {item.data.data["Title"]}
                         </text>
                       </g>
                     );
