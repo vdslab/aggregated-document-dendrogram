@@ -2,6 +2,36 @@ import { useEffect, useState } from "react";
 import * as d3 from "d3";
 import Dendrogram from "./Dendrogram";
 
+function aggregateWords(item) {
+  const keys = [
+    // "TextRank",
+    // "SingleRank",
+    // "PositionRank",
+    // "TopicRank",
+    "MultipartiteRank",
+    // "tfidf",
+    // "okapi",
+  ];
+  const words = {};
+  for (const data of item.leaves()) {
+    for (const key of keys) {
+      for (const word of data.data.data[key]) {
+        if (word === "") {
+          continue;
+        }
+        if (!(word.word in words)) {
+          words[word.word] = 0;
+        }
+        words[word.word] += word.score;
+      }
+    }
+  }
+  return Object.entries(words).map(([word, score]) => ({
+    word,
+    score,
+  }));
+}
+
 export default function Root() {
   const contentR = 300;
   const contentWidth = contentR * 2;
@@ -21,6 +51,9 @@ export default function Root() {
           .parentId((d) => d.parent);
         const dataStratify = stratify(data);
         const root = d3.hierarchy(dataStratify);
+        for (const item of root.descendants()) {
+          item.data.data.words = aggregateWords(item);
+        }
         setData(root);
       });
   }, [dataPath]);

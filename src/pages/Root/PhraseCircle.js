@@ -26,34 +26,16 @@ function optimalFontSize(word, r, fontFamily, fontWeight) {
 }
 
 function aggregateWords(item) {
-  const keys = [
-    // "TextRank",
-    // "SingleRank",
-    // "PositionRank",
-    // "TopicRank",
-    "MultipartiteRank",
-    // "tfidf",
-    // "okapi",
-  ];
-  const words = {};
-  for (const data of item.leaves()) {
-    for (const key of keys) {
-      for (const word of data.data.data[key]) {
-        if (!(word.word in words)) {
-          words[word.word] = 0;
-        }
-        words[word.word] += word.score;
-      }
-    }
-  }
-
   let left = 0;
   let right = 1000;
   for (let i = 0; i < 50; i++) {
     const mid = (left + right) / 2;
-    const numberWords = Object.entries(words).filter((word) => {
-      return word[1] > mid;
-    }).length;
+    let numberWords = 0;
+    for (const { score } of item.data.data.words) {
+      if (score > mid) {
+        numberWords += 1;
+      }
+    }
     const target = 10;
     if (numberWords <= target) {
       right = mid;
@@ -62,14 +44,9 @@ function aggregateWords(item) {
     }
   }
 
-  return Object.entries(words)
-    .filter((item) => {
-      return item[1] >= right && item[0] !== "";
-    })
-    .map(([word, score]) => ({
-      word,
-      score,
-    }));
+  return item.data.data.words.filter(({ word, score }) => {
+    return score >= right && word !== "";
+  });
 }
 
 function circleColor(word, wordClusterData) {
