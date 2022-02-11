@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
 import PhraseCircle from "./PhraseCircle";
 import Leaf from "./Leaf";
@@ -33,16 +34,37 @@ function distanceBinarySearch(item) {
   }
 }
 
+function initialRoot(searchParams, originalRoot) {
+  if (searchParams.has("root")) {
+    const rootId = searchParams.get("root");
+    const root = originalRoot.find((node) => node.data.data.no === rootId);
+    if (root) {
+      return root;
+    }
+  }
+  return originalRoot;
+}
+
+function initialDistanceThreshold(searchParams, root) {
+  if (searchParams.has("distanceThreshold")) {
+    const distanceThreshold = +searchParams.get("distanceThreshold");
+    if (distanceThreshold > 0) {
+      return distanceThreshold;
+    }
+  }
+  return distanceBinarySearch(root);
+}
+
 export default function Dendrogram({
   originalRoot,
   contentR,
   contentHeight,
   contentWidth,
 }) {
-  const [root, setRoot] = useState(originalRoot);
-  const [distanceThreshold, setDistanceThreshold] = useState(
-    distanceBinarySearch(root)
-  );
+  const [searchParams, setSearchParams] = useSearchParams();
+  const root = initialRoot(searchParams, originalRoot);
+  const distanceThreshold = initialDistanceThreshold(searchParams, root);
+
   const [wordClusterData, setWordClusterData] = useState([]);
   const wordClusterPath = "./data/word_cluster1123.json";
   useEffect(() => {
@@ -160,8 +182,10 @@ export default function Dendrogram({
                   key={item.data.data.no}
                   item={item}
                   onClick={() => {
-                    setRoot(item);
-                    setDistanceThreshold(distanceBinarySearch(item));
+                    setSearchParams({
+                      distanceThreshold: distanceBinarySearch(item),
+                      root: item.data.data.no,
+                    });
                   }}
                 />
               );
@@ -178,8 +202,10 @@ export default function Dendrogram({
                   circleSize={circleScale(item.leaves().length)}
                   distanceThreshold={distanceThreshold}
                   onClick={() => {
-                    setRoot(item);
-                    setDistanceThreshold(distanceBinarySearch(item));
+                    setSearchParams({
+                      distanceThreshold: distanceBinarySearch(item),
+                      root: item.data.data.no,
+                    });
                   }}
                 />
               );
