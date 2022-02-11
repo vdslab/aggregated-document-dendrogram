@@ -86,8 +86,8 @@ export default function PhraseCircle({
   circleSize,
   onClick,
 }) {
-  const x = Math.cos(item.x) * item.r;
-  const y = Math.sin(item.x) * item.r;
+  const x = Math.cos(item.x) * (item.r + circleSize / 2);
+  const y = Math.sin(item.x) * (item.r + circleSize / 2);
   const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
   root.sum((d) => {
@@ -100,14 +100,18 @@ export default function PhraseCircle({
   const nodes = root.descendants();
 
   return (
-    <g onClick={onClick} style={{ cursor: "pointer" }}>
+    <g
+      transform={`translate(${x},${y})`}
+      onClick={onClick}
+      style={{ cursor: "pointer" }}
+    >
       {nodes.map((node, i) => {
         if (node.data.name === "root") {
           return (
             <g
               key={i}
-              transform={`translate(${x + node.x - circleSize / 2} ${
-                y + node.y - circleSize / 2
+              transform={`translate(${node.x - circleSize / 2} ${
+                node.y - circleSize / 2
               } )`}
             >
               <circle
@@ -125,8 +129,8 @@ export default function PhraseCircle({
         return (
           <g
             key={i}
-            transform={`translate(${x + node.x - circleSize / 2} ${
-              y + node.y - circleSize / 2
+            transform={`translate(${node.x - circleSize / 2} ${
+              node.y - circleSize / 2
             } )`}
           >
             <circle

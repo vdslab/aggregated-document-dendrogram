@@ -77,10 +77,10 @@ export default function Dendrogram({
   }, [wordClusterPath]);
 
   const margin = {
-    left: 160,
-    right: 200,
-    top: 75,
-    bottom: 150,
+    left: 400,
+    right: 400,
+    top: 400,
+    bottom: 400,
   };
   const separation = 5;
   const scaleBase = 2;

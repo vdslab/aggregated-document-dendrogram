@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import Dendrogram from "./Dendrogram";
 
 export default function Root() {
-  const contentR = 540;
+  const contentR = 300;
   const contentWidth = contentR * 2;
   const contentHeight = contentR * 2;
 
