@@ -38,12 +38,18 @@ export default function Root() {
       </div>
 
       <div className="App">
-        <Dendrogram
-          originalRoot={data}
-          contentR={contentR}
-          contentHeight={contentHeight}
-          contentWidth={contentWidth}
-        />
+        <div>
+          <div className="views" style={{ display: "flex" }}>
+            <div>
+              <Dendrogram
+                originalRoot={data}
+                contentR={contentR}
+                contentHeight={contentHeight}
+                contentWidth={contentWidth}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

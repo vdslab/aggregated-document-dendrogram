@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import * as d3 from "d3";
 import PhraseCircle from "./PhraseCircle";
+import Leaf from "./Leaf";
+import Link from "./Link";
+import IntermediateNode from "./IntermediateNode";
 
 function distanceBinarySearch(item) {
   const numberBusinessThreshold = 100;
@@ -79,6 +82,9 @@ export default function Dendrogram({
     .range([contentR, 0])
     .base(scaleBase)
     .nice();
+  for (const node of nodes) {
+    node.r = radiusScale(node.data.data.distance + 1);
+  }
   let hashList = nodes
     .filter((node) => {
       return node.data.data.distance > distanceThreshold;
@@ -97,207 +103,98 @@ export default function Dendrogram({
     hashList[tempList.indexOf(Math.min.apply(null, tempList))].leaves().length;
   const circleScale = d3.scaleLinear().domain([min, max]).range([100, 200]);
 
+  const displayLinks = links.filter(({ source, target }) => {
+    return (
+      source.data.data.distance >= distanceThreshold &&
+      target.data.data.distance >= distanceThreshold
+    );
+  });
+
+  const displayNodes = nodes.filter((node) => {
+    return node.data.data.distance >= distanceThreshold;
+  });
+
+  const intermediateNodes = displayNodes.filter((node) => {
+    return (
+      distanceThreshold > 0 &&
+      node.children.every(
+        (child) => child.data.data.distance > distanceThreshold
+      )
+    );
+  });
+  const phraseCircles = displayNodes.filter((node) => {
+    return (
+      distanceThreshold > 0 &&
+      node.children.every(
+        (child) => child.data.data.distance <= distanceThreshold
+      )
+    );
+  });
+
   return (
-    <div>
-      <div className="views" style={{ display: "flex" }}>
-        <div>
-          <svg
-            width={contentWidth + margin.left + margin.right}
-            height={contentHeight + margin.top + margin.bottom}
-          >
-            <g
-              transform={`translate(${contentWidth / 2 + margin.left}, ${
-                contentHeight / 2 + margin.top
-              })`}
-            >
-              <g>
-                {links
-                  .filter(({ source, target }) => {
-                    return (
-                      source.data.data.distance >= distanceThreshold &&
-                      target.data.data.distance >= distanceThreshold
-                    );
-                  })
-                  .map(({ source, target }) => {
-                    if (source.y === 0) {
-                      const x2 =
-                        Math.cos(target.x) *
-                        radiusScale(target.data.data.distance + 1);
-                      const y2 =
-                        Math.sin(target.x) *
-                        radiusScale(target.data.data.distance + 1);
-                      const x3 = 0;
-                      const y3 = 0;
-                      const path = d3.path();
-                      path.moveTo(x2, y2);
-                      path.lineTo(x3, y3);
-                      return (
-                        <g
-                          key={`${source.data.data.no}:${target.data.data.no}`}
-                        >
-                          <path
-                            d={path.toString()}
-                            stroke="#888"
-                            fill="none"
-                            style={{ transition: "d 1s" }}
-                          ></path>
-                        </g>
-                      );
-                    } else {
-                      const x2 =
-                        Math.cos(target.x) *
-                        radiusScale(target.data.data.distance + 1);
-                      const y2 =
-                        Math.sin(target.x) *
-                        radiusScale(target.data.data.distance + 1);
-                      const x3 =
-                        Math.cos(target.x) *
-                        radiusScale(source.data.data.distance + 1);
-                      const y3 =
-                        Math.sin(target.x) *
-                        radiusScale(source.data.data.distance + 1);
-                      const path = d3.path();
-                      path.moveTo(x2, y2);
-                      path.lineTo(x3, y3);
-                      path.arc(
-                        0,
-                        0,
-                        radiusScale(source.data.data.distance + 1),
-                        target.x,
-                        source.x,
-                        Math.floor(
-                          (source.x - target.x + 2 * Math.PI) / Math.PI
-                        ) %
-                          2 ===
-                          1
-                      );
-                      return (
-                        <g
-                          key={`${source.data.data.no}:${target.data.data.no}`}
-                        >
-                          <path
-                            d={path.toString()}
-                            stroke="#888"
-                            fill="none"
-                            style={{ transition: "d 1s" }}
-                          ></path>
-                        </g>
-                      );
-                    }
-                  })}
-              </g>
-              <g>
-                {distanceThreshold !== 0 &&
-                  nodes
-                    .filter((node) => {
-                      return node.data.data.distance > distanceThreshold;
-                    })
-                    .filter((node) => {
-                      return node.children.every(
-                        (child) => child.data.data.distance > distanceThreshold
-                      );
-                    })
-                    .map((item) => {
-                      let x = 0;
-                      let y = 0;
-                      if (item.y === 0) {
-                      } else {
-                        x =
-                          Math.cos(item.x) *
-                          radiusScale(item.data.data.distance + 1);
-                        y =
-                          Math.sin(item.x) *
-                          radiusScale(item.data.data.distance + 1);
-                      }
-                      return (
-                        <g
-                          key={item.data.data.no}
-                          onClick={() => {
-                            setRoot(item);
-                            setDistanceThreshold(distanceBinarySearch(item));
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <circle cx={x} cy={y} r={10}></circle>
-                        </g>
-                      );
-                    })}
-              </g>
-              <g>
-                {distanceThreshold !== 0 &&
-                  nodes
-                    .filter((node) => {
-                      return node.data.data.distance > distanceThreshold;
-                    })
-                    .filter((node) => {
-                      return node.children.every(
-                        (child) => child.data.data.distance <= distanceThreshold
-                      );
-                    })
-                    .map((item) => {
-                      const x =
-                        Math.cos(item.x) *
-                        radiusScale(item.data.data.distance + 1);
-                      const y =
-                        Math.sin(item.x) *
-                        radiusScale(item.data.data.distance + 1);
-                      return (
-                        <g
-                          key={item.data.data.no}
-                          onClick={() => {
-                            setRoot(item);
-                            setDistanceThreshold(distanceBinarySearch(item));
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <PhraseCircle
-                            item={item}
-                            x={x}
-                            y={y}
-                            wordClusterData={wordClusterData}
-                            circleSize={circleScale(item.leaves().length)}
-                            distanceThreshold={distanceThreshold}
-                          />
-                        </g>
-                      );
-                    })}
-              </g>
-              <g>
-                {nodes
-                  .filter((node) => {
-                    return (
-                      node.data.data.distance >= distanceThreshold &&
-                      node.data.data.distance === 0
-                    );
-                  })
-                  .map((item) => {
-                    const x =
-                      Math.cos(item.x) *
-                      radiusScale(item.data.data.distance + 1);
-                    const y =
-                      Math.sin(item.x) *
-                      radiusScale(item.data.data.distance + 1);
-                    return (
-                      <g key={item.data.data.no} style={{ cursor: "pointer" }}>
-                        <text
-                          x={x}
-                          y={y}
-                          textAnchor={x >= 0 ? "start" : "end"}
-                          dominantBaseline={
-                            y >= 0 ? "text-before-edge" : "text-after-edge"
-                          }
-                          fontSize={10}
-                        >
-                          {item.data.data["Title"]}
-                        </text>
-                      </g>
-                    );
-                  })}
-              </g>
-            </g>
-          </svg>
-        </div>
-      </div>
-    </div>
+    <svg
+      width={contentWidth + margin.left + margin.right}
+      height={contentHeight + margin.top + margin.bottom}
+    >
+      <g
+        transform={`translate(${contentWidth / 2 + margin.left}, ${
+          contentHeight / 2 + margin.top
+        })`}
+      >
+        <g>
+          {displayLinks.map(({ source, target }) => {
+            return (
+              <Link
+                key={`${source.data.data.no}:${target.data.data.no}`}
+                source={source}
+                target={target}
+              />
+            );
+          })}
+        </g>
+        <g>
+          {distanceThreshold !== 0 &&
+            intermediateNodes.map((item) => {
+              return (
+                <IntermediateNode
+                  key={item.data.data.no}
+                  item={item}
+                  onClick={() => {
+                    setRoot(item);
+                    setDistanceThreshold(distanceBinarySearch(item));
+                  }}
+                />
+              );
+            })}
+        </g>
+        <g>
+          {distanceThreshold !== 0 &&
+            phraseCircles.map((item) => {
+              return (
+                <PhraseCircle
+                  key={item.data.data.no}
+                  item={item}
+                  wordClusterData={wordClusterData}
+                  circleSize={circleScale(item.leaves().length)}
+                  distanceThreshold={distanceThreshold}
+                  onClick={() => {
+                    setRoot(item);
+                    setDistanceThreshold(distanceBinarySearch(item));
+                  }}
+                />
+              );
+            })}
+        </g>
+        <g>
+          {displayNodes
+            .filter((node) => {
+              return node.data.data.distance === 0;
+            })
+            .map((item) => {
+              return <Leaf key={item.data.data.no} item={item} />;
+            })}
+        </g>
+      </g>
+    </svg>
   );
 }

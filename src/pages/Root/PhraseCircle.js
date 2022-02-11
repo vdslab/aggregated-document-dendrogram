@@ -82,11 +82,12 @@ function circleColor(word, wordClusterData) {
 
 export default function PhraseCircle({
   item,
-  x,
-  y,
   wordClusterData,
   circleSize,
+  onClick,
 }) {
+  const x = Math.cos(item.x) * item.r;
+  const y = Math.sin(item.x) * item.r;
   const data = { name: "root", children: aggregateWords(item) };
   const root = d3.hierarchy(data);
   root.sum((d) => {
@@ -97,54 +98,61 @@ export default function PhraseCircle({
   const pack = d3.pack().size([circleSize, circleSize]).padding(0);
   pack(root);
   const nodes = root.descendants();
-  return nodes.map((node, i) => {
-    if (node.data.name === "root") {
-      return (
-        <g
-          key={i}
-          transform={`translate(${x + node.x - circleSize / 2} ${
-            y + node.y - circleSize / 2
-          } )`}
-        >
-          <circle
-            cx={0}
-            cy={0}
-            r={node.r}
-            fillOpacity="100%"
-            fill="white"
-            stroke={strokeColor}
-            style={{ transition: "cx 1s, cy 1s" }}
-          ></circle>
-        </g>
-      );
-    }
-    return (
-      <g
-        key={i}
-        transform={`translate(${x + node.x - circleSize / 2} ${
-          y + node.y - circleSize / 2
-        } )`}
-      >
-        <circle
-          cx={0}
-          cy={0}
-          r={node.r}
-          fillOpacity="50%"
-          fill={
-            d3.schemeCategory10[circleColor(node.data.word, wordClusterData)]
-          }
-          style={{ transition: "cx 1s, cy 1s" }}
-        ></circle>
-        <text
-          x={0}
-          y={0}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={optimalFontSize(node.data.word, node.r)}
-        >
-          {node.data.word}
-        </text>
-      </g>
-    );
-  });
+
+  return (
+    <g onClick={onClick} style={{ cursor: "pointer" }}>
+      {nodes.map((node, i) => {
+        if (node.data.name === "root") {
+          return (
+            <g
+              key={i}
+              transform={`translate(${x + node.x - circleSize / 2} ${
+                y + node.y - circleSize / 2
+              } )`}
+            >
+              <circle
+                cx={0}
+                cy={0}
+                r={node.r}
+                fillOpacity="100%"
+                fill="white"
+                stroke={strokeColor}
+                style={{ transition: "cx 1s, cy 1s" }}
+              ></circle>
+            </g>
+          );
+        }
+        return (
+          <g
+            key={i}
+            transform={`translate(${x + node.x - circleSize / 2} ${
+              y + node.y - circleSize / 2
+            } )`}
+          >
+            <circle
+              cx={0}
+              cy={0}
+              r={node.r}
+              fillOpacity="50%"
+              fill={
+                d3.schemeCategory10[
+                  circleColor(node.data.word, wordClusterData)
+                ]
+              }
+              style={{ transition: "cx 1s, cy 1s" }}
+            ></circle>
+            <text
+              x={0}
+              y={0}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={optimalFontSize(node.data.word, node.r)}
+            >
+              {node.data.word}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
 }
