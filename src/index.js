@@ -1,6 +1,6 @@
 import "bulma/css/bulma.min.css";
 import "./index.css";
+import { render } from "react-dom";
+import App from "./App";
 
-import "@babel/polyfill";
-
-import("./App");
+render(<App />, document.querySelector("#content"));

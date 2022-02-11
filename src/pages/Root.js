@@ -1,35 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { render } from "react-dom";
+import { useEffect, useState } from "react";
 import * as d3 from "d3";
-const App = () => {
-  const [data, setData] = useState([]);
-  const dataPath = "./data/test1123.json";
-
-  useEffect(() => {
-    window
-      .fetch(dataPath)
-      .then((response) => response.json())
-      .then((data) => {
-        setData(data);
-      });
-  }, [dataPath]);
-
-  return data.length === 0 ? (
-    <div>loading</div>
-  ) : (
-    <div>
-      <div className="hero is-info is-bold">
-        <div className="hero-body">
-          <div className="container"></div>
-        </div>
-      </div>
-
-      <div className="App">
-        <FormatData data={data} />
-      </div>
-    </div>
-  );
-};
 
 const optimalFontSize = (word, r, fontFamily, fontWeight) => {
   const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -494,4 +464,33 @@ const DrawDendrogram = ({
     </div>
   );
 };
-render(<App />, document.querySelector("#content"));
+
+export default function Root() {
+  const [data, setData] = useState([]);
+  const dataPath = "./data/test1123.json";
+
+  useEffect(() => {
+    window
+      .fetch(dataPath)
+      .then((response) => response.json())
+      .then((data) => {
+        setData(data);
+      });
+  }, [dataPath]);
+
+  return data.length === 0 ? (
+    <div>loading</div>
+  ) : (
+    <div>
+      <div className="hero is-info is-bold">
+        <div className="hero-body">
+          <div className="container"></div>
+        </div>
+      </div>
+
+      <div className="App">
+        <FormatData data={data} />
+      </div>
+    </div>
+  );
+}
