@@ -115,11 +115,11 @@ export default function Root() {
       <header className="hero is-info is-bold is-small">
         <div className="hero-body">
           <div className="container">
-            <p class="title">
+            <p className="title">
               Summarized Dendrogram for Interactive Exploration of Hierarchical
               Document Clusters
             </p>
-            <p class="subtitle">
+            <p className="subtitle">
               Taiki Tanaka, Yosuke Onoue <br />
               Nihon University
             </p>
