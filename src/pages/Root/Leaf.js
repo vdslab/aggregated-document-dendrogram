@@ -1,8 +1,8 @@
 export default function Leaf({ item }) {
-  const x = Math.cos(item.x) * item.r;
-  const y = Math.sin(item.x) * item.r;
+  const x = Math.cos(item.t) * item.r;
+  const y = Math.sin(item.t) * item.r;
   return (
-    <g key={item.data.data.no} style={{ cursor: "pointer" }}>
+    <g key={item.data.data.no} className="is-clickable">
       <text
         x={x}
         y={y}

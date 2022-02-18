@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-export default function Link({ source, target }) {
+export default function Link({ source, target, opacity }) {
   const x2 = Math.cos(target.t) * target.r;
   const y2 = Math.sin(target.t) * target.r;
   const x3 = Math.cos(target.t) * source.r;
@@ -17,7 +17,7 @@ export default function Link({ source, target }) {
     Math.floor((source.t - target.t + 2 * Math.PI) / Math.PI) % 2 === 1
   );
   return (
-    <g>
+    <g opacity={opacity}>
       <path
         d={path.toString()}
         stroke="#888"

@@ -1,6 +1,8 @@
 import { useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
+import { layoutDendrogram } from "./layoutDendrogram";
 import AggregatedLeaf from "./AggregatedLeaf";
+import BirdEyeView from "./BirdEyeView";
 import IntermediateNode from "./IntermediateNode";
 import GroupLegend from "./GroupLegend";
 import Leaf from "./Leaf";
@@ -23,7 +25,7 @@ function distanceBinarySearch(item) {
         .filter((node) => {
           return node.children.every((child) => child.data.data.distance < mid);
         }).length;
-      const target = 30;
+      const target = 50;
       if (numberLeaves <= target) {
         right = mid;
       } else {
@@ -55,58 +57,14 @@ function initialDistanceThreshold(searchParams, root) {
   return distanceBinarySearch(root);
 }
 
-function calculateAngle(node) {
-  if (node.t) {
-    return node.t;
-  }
-  if (node.children) {
-    let s = 0;
-    for (const child of node.children) {
-      s += calculateAngle(child);
-    }
-    node.t = s / node.children.length;
-  } else {
-    node.t = (node.startAngle + node.endAngle) / 2;
-  }
-  return node.t;
-}
-
-function layoutDendrogram({ root, distanceThreshold, radius }) {
-  const pie = d3
-    .pie()
-    .sortValues(() => 0)
-    .padAngle(Math.PI / 180)
-    .value((node) => node.leafCount);
-  for (const item of pie(root.leaves())) {
-    item.data.startAngle = item.startAngle;
-    item.data.endAngle = item.endAngle;
-    item.data.padAngle = item.padAngle;
-  }
-
-  calculateAngle(root);
-  for (const node of root) {
-    if (node.children) {
-      node.r =
-        (node.data.data.distance - root.data.data.distance) /
-        (distanceThreshold - root.data.data.distance);
-    } else {
-      node.r = 1;
-    }
-    node.r *= radius;
-  }
-}
-
-function DendrogramContent({ data, contentR }) {
-  const stratify = d3
-    .stratify()
-    .id((d) => d.no)
-    .parentId((d) => d.parent);
-  const dataStratify = stratify(data);
-  const originalRoot = d3.hierarchy(dataStratify);
-
-  const [searchParams, setSearchParams] = useSearchParams();
-  const root = initialRoot(searchParams, originalRoot);
-  const distanceThreshold = initialDistanceThreshold(searchParams, root);
+function DendrogramContent({
+  data,
+  root,
+  distanceThreshold,
+  innerRadius,
+  outerRadius,
+}) {
+  const [, setSearchParams] = useSearchParams();
 
   const intermediateNodeIds = new Set([root.data.id]);
   for (const node of root) {
@@ -133,9 +91,13 @@ function DendrogramContent({ data, contentR }) {
     }
   }
 
-  stratify.parentId((item) =>
-    intermediateNodeIds.has(item.parent) ? item.parent : null
-  );
+  const stratify = d3
+    .stratify()
+    .id((d) => d.no)
+    .parentId((d) => d.parent)
+    .parentId((item) =>
+      intermediateNodeIds.has(item.parent) ? item.parent : null
+    );
   const displayRoot = d3.hierarchy(
     stratify(
       data.filter(
@@ -149,7 +111,7 @@ function DendrogramContent({ data, contentR }) {
   layoutDendrogram({
     root: displayRoot,
     distanceThreshold,
-    radius: contentR,
+    radius: innerRadius,
   });
   return (
     <>
@@ -191,8 +153,8 @@ function DendrogramContent({ data, contentR }) {
               <AggregatedLeaf
                 key={item.data.id}
                 item={item}
-                innerRadius={contentR}
-                outerRadius={contentR + 20}
+                innerRadius={innerRadius}
+                outerRadius={outerRadius}
                 onClick={() => {
                   setSearchParams({
                     distanceThreshold: distanceBinarySearch(item),
@@ -219,16 +181,29 @@ function DendrogramContent({ data, contentR }) {
 
 export default function Dendrogram({
   data,
-  contentR,
+  innerRadius,
+  outerRadius,
   contentHeight,
   contentWidth,
 }) {
+  const birdEyeRadius = 150;
   const margin = {
-    left: 400,
-    right: 400,
-    top: 400,
-    bottom: 400,
+    left: 100,
+    right: birdEyeRadius * 2 + 10,
+    top: 100,
+    bottom: 100,
   };
+
+  const [searchParams] = useSearchParams();
+  const stratify = d3
+    .stratify()
+    .id((d) => d.no)
+    .parentId((d) => d.parent);
+  const dataStratify = stratify(data);
+  const originalRoot = d3.hierarchy(dataStratify);
+  const root = initialRoot(searchParams, originalRoot);
+  const distanceThreshold = initialDistanceThreshold(searchParams, root);
+
   return (
     <svg
       width={contentWidth + margin.left + margin.right}
@@ -236,9 +211,27 @@ export default function Dendrogram({
     >
       <g transform={`translate(${margin.left},${margin.top})`}>
         <g transform={`translate(${contentWidth / 2}, ${contentHeight / 2})`}>
-          <DendrogramContent data={data} contentR={contentR} />
+          <DendrogramContent
+            data={data}
+            root={root}
+            distanceThreshold={distanceThreshold}
+            innerRadius={innerRadius}
+            outerRadius={outerRadius}
+          />
         </g>
-        <g transform={`translate(${contentWidth + 100})`}>
+        <g
+          transform={`translate(${contentWidth}, ${
+            contentHeight - birdEyeRadius * 2
+          })`}
+        >
+          <BirdEyeView
+            originalRoot={originalRoot}
+            root={root}
+            distanceThreshold={distanceThreshold}
+            radius={birdEyeRadius}
+          />
+        </g>
+        <g transform={`translate(${contentWidth})`}>
           <GroupLegend groups={data.at(-1).groups} />
         </g>
       </g>

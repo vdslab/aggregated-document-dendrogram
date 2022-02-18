@@ -47,9 +47,10 @@ function aggregateGroups(node, key) {
 }
 
 export default function Root() {
-  const contentR = 300;
-  const contentWidth = contentR * 2;
-  const contentHeight = contentR * 2;
+  const innerRadius = 300;
+  const outerRadius = 320;
+  const contentWidth = 800;
+  const contentHeight = 800;
 
   const [data, setData] = useState(null);
 
@@ -124,7 +125,8 @@ export default function Root() {
             <div>
               <Dendrogram
                 data={data}
-                contentR={contentR}
+                innerRadius={innerRadius}
+                outerRadius={outerRadius}
                 contentHeight={contentHeight}
                 contentWidth={contentWidth}
               />
