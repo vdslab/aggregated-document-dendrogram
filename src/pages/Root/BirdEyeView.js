@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { layoutDendrogram } from "./layoutDendrogram";
+import { layoutDendrogram } from "./utils";
 import Link from "./Link";
 
 export default function BirdEyeView({
@@ -56,7 +56,7 @@ export default function BirdEyeView({
         <circle
           r={thresholdR}
           fill="none"
-          stroke="#d00"
+          stroke="rgb(62, 142, 208)"
           strokeWidth="3"
           opacity="0.8"
         />

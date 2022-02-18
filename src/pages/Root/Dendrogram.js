@@ -1,61 +1,17 @@
 import { useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
-import { layoutDendrogram } from "./layoutDendrogram";
+import {
+  distanceBinarySearch,
+  initialDistanceThreshold,
+  initialRoot,
+  layoutDendrogram,
+} from "./utils";
 import AggregatedLeaf from "./AggregatedLeaf";
 import BirdEyeView from "./BirdEyeView";
 import IntermediateNode from "./IntermediateNode";
 import GroupLegend from "./GroupLegend";
 import Leaf from "./Leaf";
 import Link from "./Link";
-
-function distanceBinarySearch(item) {
-  const numberBusinessThreshold = 100;
-  if (item.leaves().length < numberBusinessThreshold) {
-    return 0;
-  } else {
-    let left = 0;
-    let right = 10000;
-    for (let i = 0; i < 50; i++) {
-      const mid = (left + right) / 2;
-      const numberLeaves = item
-        .descendants()
-        .filter((node) => {
-          return node.data.data.distance >= mid;
-        })
-        .filter((node) => {
-          return node.children.every((child) => child.data.data.distance < mid);
-        }).length;
-      const target = 50;
-      if (numberLeaves <= target) {
-        right = mid;
-      } else {
-        left = mid;
-      }
-    }
-    return right;
-  }
-}
-
-function initialRoot(searchParams, originalRoot) {
-  if (searchParams.has("root")) {
-    const rootId = searchParams.get("root");
-    const root = originalRoot.find((node) => node.data.id === rootId);
-    if (root) {
-      return root;
-    }
-  }
-  return originalRoot;
-}
-
-function initialDistanceThreshold(searchParams, root) {
-  if (searchParams.has("distanceThreshold")) {
-    const distanceThreshold = +searchParams.get("distanceThreshold");
-    if (distanceThreshold > 0) {
-      return distanceThreshold;
-    }
-  }
-  return distanceBinarySearch(root);
-}
 
 function DendrogramContent({
   data,
@@ -188,7 +144,7 @@ function DendrogramContent({
 export default function Dendrogram({ data }) {
   const innerRadius = 300;
   const outerRadius = 310;
-  const scoreBarHeight = 140;
+  const scoreBarHeight = 130;
   const contentWidth = (outerRadius + scoreBarHeight) * 2;
   const contentHeight = contentWidth;
   const birdEyeRadius = 150;
@@ -211,8 +167,10 @@ export default function Dendrogram({ data }) {
 
   return (
     <svg
-      width={contentWidth + margin.left + margin.right}
-      height={contentHeight + margin.top + margin.bottom}
+      className="has-ratio"
+      viewBox={`0,0,${contentWidth + margin.left + margin.right},${
+        contentHeight + margin.top + margin.bottom
+      }`}
     >
       <g transform={`translate(${margin.left},${margin.top})`}>
         <g transform={`translate(${contentWidth / 2}, ${contentHeight / 2})`}>

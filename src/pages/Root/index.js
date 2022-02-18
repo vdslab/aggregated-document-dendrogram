@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
+import { distanceBinarySearch, initialRoot } from "./utils";
 import Dendrogram from "./Dendrogram";
 
 function aggregateWords(item) {
@@ -47,7 +49,9 @@ function aggregateGroups(node, key) {
 }
 
 export default function Root() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
     (async () => {
@@ -107,22 +111,110 @@ export default function Root() {
   }
 
   return (
-    <div>
-      <div className="hero is-info is-bold">
+    <>
+      <header className="hero is-info is-bold is-small">
         <div className="hero-body">
-          <div className="container"></div>
-        </div>
-      </div>
-
-      <div className="App">
-        <div>
-          <div className="views" style={{ display: "flex" }}>
-            <div>
-              <Dendrogram data={data} />
-            </div>
+          <div className="container">
+            <p class="title">
+              Summarized Dendrogram for Interactive Exploration of Hierarchical
+              Document Clusters
+            </p>
+            <p class="subtitle">
+              Taiki Tanaka, Yosuke Onoue <br />
+              Nihon University
+            </p>
           </div>
         </div>
-      </div>
-    </div>
+      </header>
+      <section className="section">
+        <div className="container">
+          <div className="content">
+            This is an interactive demonstration of summarized dendrogram for
+            visualizing hierarchical document clusters. The following diagram
+            represents the hierarchical document clusters of{" "}
+            <a href="https://sites.google.com/site/vispubdata/home">
+              visualization publications dataset
+            </a>{" "}
+            which contains the information of articles published in the IEEE VIS
+            conference.
+          </div>
+        </div>
+      </section>
+      <section className="section">
+        <div className="container">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              const limitNumberOfLeaves = +event.target.leaves.value;
+              event.target.leaves.value = "50";
+              const stratify = d3
+                .stratify()
+                .id((d) => d.no)
+                .parentId((d) => d.parent);
+              const dataStratify = stratify(data);
+              const originalRoot = d3.hierarchy(dataStratify);
+              const root = initialRoot(searchParams, originalRoot);
+              setSearchParams({
+                root: root.data.id,
+                distanceThreshold: distanceBinarySearch(
+                  root,
+                  +limitNumberOfLeaves
+                ),
+              });
+            }}
+          >
+            <div className="field is-horizontal">
+              <div className="field-label">
+                <label className="label">Number of leaves</label>
+              </div>
+              <div className="field-body">
+                <div className="field is-expanded">
+                  <div className="field has-addons">
+                    <div className="control is-expanded">
+                      <input
+                        name="leaves"
+                        className="input"
+                        type="number"
+                        min="1"
+                        defaultValue="50"
+                        required
+                      />
+                    </div>
+                    <div className="control">
+                      <button className="button" type="submit">
+                        change
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+          <figure className="image is-4by3">
+            <Dendrogram data={data} />
+          </figure>
+          <div className="buttons is-centered">
+            <button
+              className="button"
+              onClick={() => {
+                navigate("/");
+              }}
+            >
+              reset
+            </button>
+          </div>
+        </div>
+      </section>
+      <footer className="footer">
+        <div className="content">
+          <p className="has-text-centered">
+            &copy; 2022{" "}
+            <a href="https://vdslab.jp/" target="_blank" rel="noreferrer">
+              vdslab
+            </a>
+          </p>
+        </div>
+      </footer>
+    </>
   );
 }

@@ -35,6 +35,7 @@ export default function AggregatedLeaf({
     .sortValues(() => 0)
     .value((d) => d.count);
   const groupArcs = groupsPie(item.data.data.groups);
+  const textMargin = 3;
   return (
     <g className="is-clickable" onClick={onClick}>
       <g>
@@ -63,10 +64,10 @@ export default function AggregatedLeaf({
                 transform={
                   Math.cos(item.startAngle) >= 0
                     ? `rotate(${(t * 180) / Math.PI})translate(${
-                        outerRadius + 5
+                        outerRadius + textMargin
                       })`
                     : `rotate(${(t * 180) / Math.PI + 180})translate(${
-                        -outerRadius - 5
+                        -outerRadius - textMargin
                       })`
                 }
                 fill="#000"
