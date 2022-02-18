@@ -47,11 +47,6 @@ function aggregateGroups(node, key) {
 }
 
 export default function Root() {
-  const innerRadius = 300;
-  const outerRadius = 320;
-  const contentWidth = 800;
-  const contentHeight = 800;
-
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -67,7 +62,7 @@ export default function Root() {
       for (const { word, cluster_id } of wordClusterData) {
         wordCluster[word] = cluster_id;
       }
-      const clusterColor = d3.scaleOrdinal(d3.schemeCategory10);
+      const clusterColor = d3.scaleOrdinal(d3.schemePastel1);
 
       const stratify = d3
         .stratify()
@@ -123,13 +118,7 @@ export default function Root() {
         <div>
           <div className="views" style={{ display: "flex" }}>
             <div>
-              <Dendrogram
-                data={data}
-                innerRadius={innerRadius}
-                outerRadius={outerRadius}
-                contentHeight={contentHeight}
-                contentWidth={contentWidth}
-              />
+              <Dendrogram data={data} />
             </div>
           </div>
         </div>

@@ -63,6 +63,7 @@ function DendrogramContent({
   distanceThreshold,
   innerRadius,
   outerRadius,
+  scoreBarHeight,
 }) {
   const [, setSearchParams] = useSearchParams();
 
@@ -113,6 +114,9 @@ function DendrogramContent({
     distanceThreshold,
     radius: innerRadius,
   });
+  const scoreMax = d3.max(displayRoot.leaves(), (leaf) =>
+    d3.max(leaf.data.data.words, ({ score }) => score)
+  );
   return (
     <>
       <g>
@@ -155,6 +159,8 @@ function DendrogramContent({
                 item={item}
                 innerRadius={innerRadius}
                 outerRadius={outerRadius}
+                scoreMax={scoreMax}
+                scoreBarHeight={scoreBarHeight}
                 onClick={() => {
                   setSearchParams({
                     distanceThreshold: distanceBinarySearch(item),
@@ -179,19 +185,18 @@ function DendrogramContent({
   );
 }
 
-export default function Dendrogram({
-  data,
-  innerRadius,
-  outerRadius,
-  contentHeight,
-  contentWidth,
-}) {
+export default function Dendrogram({ data }) {
+  const innerRadius = 300;
+  const outerRadius = 310;
+  const scoreBarHeight = 140;
+  const contentWidth = (outerRadius + scoreBarHeight) * 2;
+  const contentHeight = contentWidth;
   const birdEyeRadius = 150;
   const margin = {
-    left: 100,
+    left: 10,
     right: birdEyeRadius * 2 + 10,
-    top: 100,
-    bottom: 100,
+    top: 10,
+    bottom: 10,
   };
 
   const [searchParams] = useSearchParams();
@@ -217,6 +222,7 @@ export default function Dendrogram({
             distanceThreshold={distanceThreshold}
             innerRadius={innerRadius}
             outerRadius={outerRadius}
+            scoreBarHeight={scoreBarHeight}
           />
         </g>
         <g

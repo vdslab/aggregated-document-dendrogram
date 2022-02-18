@@ -5,6 +5,8 @@ export default function AggregatedLeaf({
   onClick,
   innerRadius,
   outerRadius,
+  scoreMax,
+  scoreBarHeight,
 }) {
   const arc = d3
     .arc()
@@ -12,7 +14,17 @@ export default function AggregatedLeaf({
     .endAngle((d) => d.endAngle + Math.PI / 2)
     .innerRadius(innerRadius)
     .outerRadius(outerRadius);
-  const dt = Math.PI / 120;
+  const scoreArc = d3
+    .arc()
+    .startAngle((d) => d.startAngle + Math.PI / 2)
+    .endAngle((d) => d.endAngle + Math.PI / 2)
+    .innerRadius(outerRadius);
+  const scoreScale = d3
+    .scaleLinear()
+    .domain([0, scoreMax])
+    .range([0, scoreBarHeight]);
+
+  const dt = Math.PI / 80;
   const wordCount = Math.floor(
     (item.endAngle - item.startAngle - item.padAngle) / dt
   );
@@ -34,25 +46,30 @@ export default function AggregatedLeaf({
           );
         })}
       </g>
-      <path d={arc(item)} fill="none" stroke="#888" />
       <g>
         {item.data.data.words.slice(0, wordCount).map((word, i) => {
-          const t = item.startAngle + item.padAngle + dt * i + dt / 2;
+          const t = item.startAngle + item.padAngle / 2 + dt * i + dt / 2;
           return (
-            <g
-              key={word.word}
-              transform={
-                Math.cos(item.startAngle) >= 0
-                  ? `rotate(${(t * 180) / Math.PI})translate(${
-                      outerRadius + 5
-                    })`
-                  : `rotate(${(t * 180) / Math.PI + 180})translate(${
-                      -outerRadius - 5
-                    })`
-              }
-            >
-              <text
+            <g key={word.word}>
+              <path
+                d={scoreArc({
+                  startAngle: t - dt / 2,
+                  endAngle: t + dt / 2,
+                  outerRadius: outerRadius + scoreScale(word.score),
+                })}
                 fill={word.color}
+              />
+              <text
+                transform={
+                  Math.cos(item.startAngle) >= 0
+                    ? `rotate(${(t * 180) / Math.PI})translate(${
+                        outerRadius + 5
+                      })`
+                    : `rotate(${(t * 180) / Math.PI + 180})translate(${
+                        -outerRadius - 5
+                      })`
+                }
+                fill="#000"
                 fontSize="10"
                 fontWeight="bold"
                 textAnchor={Math.cos(item.startAngle) >= 0 ? "start" : "end"}
@@ -64,6 +81,7 @@ export default function AggregatedLeaf({
           );
         })}
       </g>
+      <path d={arc(item)} fill="none" stroke="#888" />
     </g>
   );
 }
