@@ -1,10 +1,12 @@
 import { useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
 import {
+  constructDendrogram,
   distanceBinarySearch,
   initialDistanceThreshold,
   initialRoot,
   layoutDendrogram,
+  summarizeDendrogram,
 } from "./utils";
 import AggregatedLeaf from "./AggregatedLeaf";
 import BirdEyeView from "./BirdEyeView";
@@ -23,45 +25,11 @@ function DendrogramContent({
 }) {
   const [, setSearchParams] = useSearchParams();
 
-  const intermediateNodeIds = new Set([root.data.id]);
-  for (const node of root) {
-    if (
-      node.children &&
-      (node.parent == null || intermediateNodeIds.has(node.parent.data.id)) &&
-      node.children.every(
-        (child) => child.data.data.distance >= distanceThreshold
-      )
-    ) {
-      intermediateNodeIds.add(node.data.id);
-    }
-  }
-
-  const displayLeafIds = new Set();
+  const displayRoot = summarizeDendrogram(root, distanceThreshold);
   const leafCount = {};
-  for (const node of root.descendants()) {
-    if (
-      !intermediateNodeIds.has(node.data.id) &&
-      intermediateNodeIds.has(node.parent.data.id)
-    ) {
-      displayLeafIds.add(node.data.id);
-      leafCount[node.data.id] = node.leaves().length;
-    }
+  for (const node of root) {
+    leafCount[node.data.id] = node.leaves().length;
   }
-
-  const stratify = d3
-    .stratify()
-    .id((d) => d.no)
-    .parentId((d) => d.parent)
-    .parentId((item) =>
-      intermediateNodeIds.has(item.parent) ? item.parent : null
-    );
-  const displayRoot = d3.hierarchy(
-    stratify(
-      data.filter(
-        ({ no }) => intermediateNodeIds.has(no) || displayLeafIds.has(no)
-      )
-    )
-  );
   for (const node of displayRoot.leaves()) {
     node.leafCount = leafCount[node.data.id];
   }
@@ -156,12 +124,7 @@ export default function Dendrogram({ data }) {
   };
 
   const [searchParams] = useSearchParams();
-  const stratify = d3
-    .stratify()
-    .id((d) => d.no)
-    .parentId((d) => d.parent);
-  const dataStratify = stratify(data);
-  const originalRoot = d3.hierarchy(dataStratify);
+  const originalRoot = constructDendrogram(data);
   const root = initialRoot(searchParams, originalRoot);
   const distanceThreshold = initialDistanceThreshold(searchParams, root);
 

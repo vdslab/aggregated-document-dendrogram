@@ -40,23 +40,16 @@ export function layoutDendrogram({ root, distanceThreshold, radius }) {
   }
 }
 
-export function distanceBinarySearch(item, limitNumberOfLeaves = 50) {
+export function distanceBinarySearch(root, limitNumberOfLeaves = 50) {
   const numberBusinessThreshold = 100;
-  if (item.leaves().length < numberBusinessThreshold) {
+  if (root.leaves().length < numberBusinessThreshold) {
     return 0;
   } else {
     let left = 0;
     let right = 10000;
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 100; i++) {
       const mid = (left + right) / 2;
-      const numberLeaves = item
-        .descendants()
-        .filter((node) => {
-          return node.data.data.distance >= mid;
-        })
-        .filter((node) => {
-          return node.children.every((child) => child.data.data.distance < mid);
-        }).length;
+      const numberLeaves = summarizeDendrogram(root, mid).leaves().length;
       if (numberLeaves <= limitNumberOfLeaves) {
         right = mid;
       } else {
@@ -86,4 +79,47 @@ export function initialDistanceThreshold(searchParams, root) {
     }
   }
   return distanceBinarySearch(root);
+}
+
+export function summarizeDendrogram(root, distanceThreshold) {
+  const intermediateNodeIds = new Set([root.data.id]);
+  for (const node of root) {
+    if (
+      node.children &&
+      (node.parent == null || intermediateNodeIds.has(node.parent.data.id)) &&
+      node.children.every(
+        (child) => child.data.data.distance >= distanceThreshold
+      )
+    ) {
+      intermediateNodeIds.add(node.data.id);
+    }
+  }
+
+  const displayLeafIds = new Set();
+  for (const node of root) {
+    if (
+      !intermediateNodeIds.has(node.data.id) &&
+      intermediateNodeIds.has(node.parent.data.id)
+    ) {
+      displayLeafIds.add(node.data.id);
+    }
+  }
+
+  const data = root
+    .descendants()
+    .filter(
+      (node) =>
+        intermediateNodeIds.has(node.data.id) ||
+        displayLeafIds.has(node.data.id)
+    )
+    .map((node) => node.data.data);
+  return constructDendrogram(data, root.data.id);
+}
+
+export function constructDendrogram(data, rootId = null) {
+  const stratify = d3
+    .stratify()
+    .id((d) => d.no)
+    .parentId((d) => (d.no === rootId ? null : d.parent));
+  return d3.hierarchy(stratify(data));
 }
