@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import * as d3 from "d3";
-import { distanceBinarySearch, initialRoot } from "./utils";
+import {
+  constructDendrogram,
+  distanceBinarySearch,
+  initialRoot,
+} from "./utils";
 import Dendrogram from "./Dendrogram";
 
 function aggregateWords(item) {
@@ -68,12 +72,7 @@ export default function Root() {
       }
       const clusterColor = d3.scaleOrdinal(d3.schemePastel1);
 
-      const stratify = d3
-        .stratify()
-        .id((d) => d.no)
-        .parentId((d) => d.parent);
-      const dataStratify = stratify(data);
-      const root = d3.hierarchy(dataStratify);
+      const root = constructDendrogram(data);
       for (const node of root) {
         node.data.data.words = aggregateWords(node);
         for (const word of node.data.data.words) {
@@ -146,6 +145,7 @@ export default function Root() {
             onSubmit={(event) => {
               event.preventDefault();
               const limitNumberOfLeaves = +event.target.leaves.value;
+<<<<<<< HEAD
               event.target.leaves.value = "10";
               const stratify = d3
                 .stratify()
@@ -153,6 +153,10 @@ export default function Root() {
                 .parentId((d) => d.parent);
               const dataStratify = stratify(data);
               const originalRoot = d3.hierarchy(dataStratify);
+=======
+              event.target.leaves.value = "50";
+              const originalRoot = constructDendrogram(data);
+>>>>>>> 825b235cd21b032769630c2cb0e2ba6123bdbb6b
               const root = initialRoot(searchParams, originalRoot);
               setSearchParams({
                 root: root.data.id,
