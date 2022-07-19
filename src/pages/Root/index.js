@@ -145,7 +145,6 @@ export default function Root() {
             onSubmit={(event) => {
               event.preventDefault();
               const limitNumberOfLeaves = +event.target.leaves.value;
-<<<<<<< HEAD
               event.target.leaves.value = "10";
               const stratify = d3
                 .stratify()
@@ -153,10 +152,6 @@ export default function Root() {
                 .parentId((d) => d.parent);
               const dataStratify = stratify(data);
               const originalRoot = d3.hierarchy(dataStratify);
-=======
-              event.target.leaves.value = "50";
-              const originalRoot = constructDendrogram(data);
->>>>>>> 825b235cd21b032769630c2cb0e2ba6123bdbb6b
               const root = initialRoot(searchParams, originalRoot);
               setSearchParams({
                 root: root.data.id,
