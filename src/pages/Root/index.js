@@ -30,7 +30,7 @@ function aggregateWords(item) {
   }
   const result = Object.entries(words).map(([word, score]) => ({
     word,
-    score,
+    score
   }));
   result.sort((a, b) => b.score - a.score);
   return result;
@@ -55,11 +55,11 @@ export default function Root() {
 
   useEffect(() => {
     (async () => {
-      const dataPath = "./data/test1123.json";
+      const dataPath = "./data/220719.json";
       const dataResponse = await fetch(dataPath);
       const data = await dataResponse.json();
 
-      const wordClusterPath = "./data/word_cluster1123.json";
+      const wordClusterPath = "./data/word_cluster1123 copy.json";
       const wordClusterResponse = await fetch(wordClusterPath);
       const wordClusterData = await wordClusterResponse.json();
       const wordCluster = {};
@@ -146,7 +146,7 @@ export default function Root() {
             onSubmit={(event) => {
               event.preventDefault();
               const limitNumberOfLeaves = +event.target.leaves.value;
-              event.target.leaves.value = "50";
+              event.target.leaves.value = "10";
               const stratify = d3
                 .stratify()
                 .id((d) => d.no)
