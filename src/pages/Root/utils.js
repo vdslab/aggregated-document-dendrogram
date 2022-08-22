@@ -40,7 +40,7 @@ export function layoutDendrogram({ root, distanceThreshold, radius }) {
   }
 }
 
-export function distanceBinarySearch(item, limitNumberOfLeaves = 50) {
+export function distanceBinarySearch(item, limitNumberOfLeaves = 20) {
   const numberBusinessThreshold = 100;
   if (item.leaves().length < numberBusinessThreshold) {
     return 0;

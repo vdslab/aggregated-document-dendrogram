@@ -4,6 +4,8 @@
 /node_modules
 /.pnp
 .pnp.js
+/.vscode
+/.python-version
 
 # testing
 /coverage
@@ -21,3 +23,7 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# tdb's work
+/ipynb/tdb
+/public/data/tdb

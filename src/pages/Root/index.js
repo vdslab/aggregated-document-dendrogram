@@ -13,8 +13,28 @@ function aggregateWords(item) {
     "MultipartiteRank",
     // "tfidf",
     // "okapi",
+    // "Tf",
+    // "topvec",
+    // "TopicScore",
+    // "WordScore",
   ];
   const words = {};
+  // const count = {}
+  // for (const data of item.leaves()) {
+  //   for (const key of keys) {
+  //     for (const word of data.data.data[key]) {
+  //       if (word ===""){
+  //         continue
+  //       }
+  //       if (!(word.word in words)) {
+  //         count[word.word] = 0
+  //       }
+  //       count[word.word] += 1
+  //     }
+  //   }
+  // }
+
+  //Use MultipartiteRank, TopicScore(not calced TF-IDF)
   for (const data of item.leaves()) {
     for (const key of keys) {
       for (const word of data.data.data[key]) {
@@ -28,6 +48,25 @@ function aggregateWords(item) {
       }
     }
   }
+
+  // for (let score of Object.values(words)){
+  //   if (score === undefined){
+  //     continue;
+  //   }
+  //   score = score/item.leaves().length
+  // }
+
+  //Use tfidf, WordScore(calced TF-IDF)
+  // for (const word of item.data.data['WordScore']){
+  //   if (word === "") {
+  //     continue;
+  //   }
+  //   if (!(word.word in words)) {
+  //     words[word.word] = 0;
+  //   }
+  //   words[word.word] += word.score
+  // }
+
   const result = Object.entries(words).map(([word, score]) => ({
     word,
     score,
@@ -55,11 +94,11 @@ export default function Root() {
 
   useEffect(() => {
     (async () => {
-      const dataPath = "./data/linkedPkeDataCCR202101.json";
+      const dataPath = "./data/visdata220801.json";
       const dataResponse = await fetch(dataPath);
       const data = await dataResponse.json();
 
-      const wordClusterPath = "./data/word_cluster1123.json";
+      const wordClusterPath = "./data/word_cluster1123 copy.json";
       const wordClusterResponse = await fetch(wordClusterPath);
       const wordClusterData = await wordClusterResponse.json();
       const wordCluster = {};
@@ -146,7 +185,7 @@ export default function Root() {
             onSubmit={(event) => {
               event.preventDefault();
               const limitNumberOfLeaves = +event.target.leaves.value;
-              event.target.leaves.value = "50";
+              event.target.leaves.value = "20";
               const stratify = d3
                 .stratify()
                 .id((d) => d.no)
@@ -176,7 +215,7 @@ export default function Root() {
                         className="input"
                         type="number"
                         min="1"
-                        defaultValue="50"
+                        defaultValue="20"
                         required
                       />
                     </div>
