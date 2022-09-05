@@ -10,12 +10,12 @@ function aggregateWords(item) {
     // "SingleRank",
     // "PositionRank",
     // "TopicRank",
-    "MultipartiteRank",
+    // "MultipartiteRank",
     // "tfidf",
     // "okapi",
     // "Tf",
     // "topvec",
-    // "TopicScore",
+    "TopicScore",
     // "WordScore",
   ];
   const words = {};
@@ -34,17 +34,29 @@ function aggregateWords(item) {
   //   }
   // }
 
-  //Use MultipartiteRank, TopicScore(not calced TF-IDF)
   for (const data of item.leaves()) {
     for (const key of keys) {
-      for (const word of data.data.data[key]) {
-        if (word === "") {
-          continue;
+      if (key === "MultipartiteRank" || key === "TopicScore") {
+        for (const word of data.data.data[key]) {
+          if (word === "") {
+            continue;
+          }
+          if (!(word.word in words)) {
+            words[word.word] = 0;
+          }
+          words[word.word] += word.score;
         }
-        if (!(word.word in words)) {
-          words[word.word] = 0;
+      } else {
+        //
+        for (const word of data.data.data[key]) {
+          if (word === "") {
+            continue;
+          }
+          if (!(word.word in words)) {
+            words[word.word] = 0;
+          }
+          words[word.word] += word.score;
         }
-        words[word.word] += word.score;
       }
     }
   }
@@ -54,17 +66,6 @@ function aggregateWords(item) {
   //     continue;
   //   }
   //   score = score/item.leaves().length
-  // }
-
-  //Use tfidf, WordScore(calced TF-IDF)
-  // for (const word of item.data.data['WordScore']){
-  //   if (word === "") {
-  //     continue;
-  //   }
-  //   if (!(word.word in words)) {
-  //     words[word.word] = 0;
-  //   }
-  //   words[word.word] += word.score
   // }
 
   const result = Object.entries(words).map(([word, score]) => ({
@@ -94,7 +95,7 @@ export default function Root() {
 
   useEffect(() => {
     (async () => {
-      const dataPath = "./data/visdata220801.json";
+      const dataPath = "./data/visdata220905.json";
       const dataResponse = await fetch(dataPath);
       const data = await dataResponse.json();
 
