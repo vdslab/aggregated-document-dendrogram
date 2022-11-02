@@ -1,6 +1,6 @@
 export default function IntermediateNode({ item, onClick }) {
   const [x, y] =
-    item.y === 0
+    item.r === 0
       ? [0, 0]
       : [Math.cos(item.t) * item.r, Math.sin(item.t) * item.r];
   return (

@@ -18,7 +18,8 @@ function aggregateWords(item) {
     "TopicScore",
     // "WordScore",
   ];
-  const words = {};
+  const words = item.data.data["WordScore"];
+  return words.sort((a, b) => b.score - a.score);
   // const count = {}
   // for (const data of item.leaves()) {
   //   for (const key of keys) {
@@ -34,46 +35,46 @@ function aggregateWords(item) {
   //   }
   // }
 
-  for (const data of item.leaves()) {
-    for (const key of keys) {
-      if (key === "MultipartiteRank" || key === "TopicScore") {
-        for (const word of data.data.data[key]) {
-          if (word === "") {
-            continue;
-          }
-          if (!(word.word in words)) {
-            words[word.word] = 0;
-          }
-          words[word.word] += word.score;
-        }
-      } else {
-        //
-        for (const word of data.data.data[key]) {
-          if (word === "") {
-            continue;
-          }
-          if (!(word.word in words)) {
-            words[word.word] = 0;
-          }
-          words[word.word] += word.score;
-        }
-      }
-    }
-  }
-
-  // for (let score of Object.values(words)){
-  //   if (score === undefined){
-  //     continue;
+  // for (const data of item.leaves()) {
+  //   for (const key of keys) {
+  //     if (key === "MultipartiteRank" || key === "TopicScore") {
+  //       for (const word of data.data.data[key]) {
+  //         if (word === "") {
+  //           continue;
+  //         }
+  //         if (!(word.word in words)) {
+  //           words[word.word] = 0;
+  //         }
+  //         words[word.word] += word.score;
+  //       }
+  //     } else {
+  //       //
+  //       for (const word of data.data.data[key]) {
+  //         if (word === "") {
+  //           continue;
+  //         }
+  //         if (!(word.word in words)) {
+  //           words[word.word] = 0;
+  //         }
+  //         words[word.word] += word.score;
+  //       }
+  //     }
   //   }
-  //   score = score/item.leaves().length
   // }
 
-  const result = Object.entries(words).map(([word, score]) => ({
-    word,
-    score,
-  }));
-  result.sort((a, b) => b.score - a.score);
-  return result;
+  // for (let score of Object.values(words)) {
+  //   if (score === undefined) {
+  //     continue;
+  //   }
+  //   score = score / item.leaves().length;
+  // }
+
+  // const result = Object.entries(words).map(([word, score]) => ({
+  //   word,
+  //   score,
+  // }));
+  // result.sort((a, b) => b.score - a.score);
+  // return result;
 }
 
 function aggregateGroups(node, key) {
@@ -95,7 +96,7 @@ export default function Root() {
 
   useEffect(() => {
     (async () => {
-      const dataPath = "./data/visdata220905.json";
+      const dataPath = "./data/tdb/BertTopvecCCCCR202101v2.json";
       const dataResponse = await fetch(dataPath);
       const data = await dataResponse.json();
 
